@@ -1,4 +1,0 @@
-interface:
-  display_name: "Obsidian GitHub iPhone Sync"
-  short_description: "Build and verify private Obsidian sync"
-  default_prompt: "Use $obsidian-github-iphone-sync to configure and verify Obsidian sync across Windows, GitHub, and iPhone."

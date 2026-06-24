@@ -1,6 +1,6 @@
 ---
-name: obsidian-github-iphone-sync
-description: Configure, repair, and verify private Obsidian synchronization across Windows, GitHub, and iPhone. 配置、修复并验证 Windows、GitHub 与 iPhone 之间的 Obsidian 私有同步。Use for private vault repositories, Windows edit-event sync, iOS setup, device-setting isolation, duplicate-note diagnosis, failed pushes, and end-to-end checks. 用于私有笔记仓库、Windows 编辑事件同步、iOS 配置、设备设置隔离、重复笔记诊断、推送失败和端到端检查。
+name: obsidian-through
+description: Configure, repair, and verify private Obsidian synchronization across Windows, GitHub, iPhone, and Android. 配置、修复并验证 Windows、GitHub、iPhone 与 Android 之间的 Obsidian 私有同步。Use for private vault repositories, Windows edit-event sync, mobile setup, device-setting isolation, duplicate-note diagnosis, failed pushes, and end-to-end checks. 用于私有笔记仓库、Windows 编辑事件同步、手机配置、设备设置隔离、重复笔记诊断、推送失败和端到端检查。
 ---
 
 # 中文版
