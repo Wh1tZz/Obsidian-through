@@ -3,8 +3,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$VaultPath,
     [string]$GitExe = "",
-    [int]$DebounceSeconds = 60,
-    [int]$PullIntervalSeconds = 60,
+    [int]$DebounceSeconds = 15,
+    [int]$PullIntervalSeconds = 30,
     [string]$Remote = "origin",
     [string]$Branch = "main",
     [string]$InstallRoot = ""

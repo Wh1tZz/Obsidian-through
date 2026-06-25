@@ -86,11 +86,11 @@ powershell -ExecutionPolicy Bypass -File scripts/publish-vault.ps1 `
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 `
   -VaultPath "C:\笔记库路径" `
-  -DebounceSeconds 60 `
-  -PullIntervalSeconds 60
+  -DebounceSeconds 15 `
+  -PullIntervalSeconds 30
 ```
 
-该任务监听创建、修改、重命名和删除。停止编辑 60 秒后自动提交、变基远端更新并推送。没有本地编辑时不会提交或推送；工作区干净时每 60 秒通过隐藏任务静默拉取手机更新。
+该任务监听创建、修改、重命名和删除。停止编辑 15 秒后自动提交、变基远端更新并推送。没有本地编辑时不会提交或推送；工作区干净时每 30 秒通过隐藏任务静默拉取手机更新。不要默认低于 10 秒，过短会制造大量碎提交并增加多设备冲突概率。
 
 安装脚本还会创建 `Obsidian Git Sync Watchdog ...` 计划任务。主同步任务和守护任务都通过 `wscript.exe` 调用 `run-hidden.vbs` 隐藏启动 PowerShell，避免开机登录或周期检查时弹出 CLI 窗口。使用隐藏启动器后，主同步任务可能显示 `Running` 或 `Ready`；以 `watcherProcesses` 判断真实监听是否存活。守护任务每分钟短暂运行一次，检查真实的 `watch-vault.ps1` 后台进程，若主监听因睡眠、断电、电池策略或异常退出而停止，守护任务会重新启动它。
 
@@ -233,11 +233,19 @@ If the remote has unrelated history and Git cannot merge it cleanly, stop and re
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 `
   -VaultPath "C:\path\to\vault" `
-  -DebounceSeconds 60 `
-  -PullIntervalSeconds 60
+  -DebounceSeconds 15 `
+  -PullIntervalSeconds 30
 ```
 
-The task listens for create, modify, rename, and delete events. Sixty quiet seconds trigger commit, rebase, and push. With no local edits, it does not commit or push; a hidden clean-worktree pull checks for phone updates every 60 seconds.
+The task listens for create, modify, rename, and delete events. Fifteen quiet seconds trigger commit, rebase, and push. With no local edits, it does not commit or push; a hidden clean-worktree pull checks for phone updates every 30 seconds.
+
+Recommended speed settings:
+
+- Normal responsive desktop sync: `-DebounceSeconds 15 -PullIntervalSeconds 30`
+- Conservative sync for very large vaults or slow networks: `-DebounceSeconds 60 -PullIntervalSeconds 60`
+- Aggressive sync only by explicit user request: `-DebounceSeconds 10 -PullIntervalSeconds 20`
+
+Avoid debounce values below 10 seconds by default. They create many tiny commits while the user is still editing and increase the chance of conflicts when several devices are active.
 
 The installer also creates an `Obsidian Git Sync Watchdog ...` scheduled task. Both the main sync task and watchdog call `run-hidden.vbs` through `wscript.exe`, so they do not flash CLI windows at logon or during periodic checks. With the hidden launcher, the main sync task may appear as `Running` or `Ready`; use `watcherProcesses` to determine whether the real watcher is alive. The watchdog runs briefly every minute and checks the real `watch-vault.ps1` background process. If the watcher stops after sleep, power changes, battery policy, or an abnormal exit, the watchdog starts it again.
 

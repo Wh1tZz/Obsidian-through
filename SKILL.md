@@ -71,11 +71,11 @@ git rm --cached .obsidian/plugins/obsidian-git/data.json
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 `
   -VaultPath "C:\笔记库路径" `
-  -DebounceSeconds 60 `
-  -PullIntervalSeconds 60
+  -DebounceSeconds 15 `
+  -PullIntervalSeconds 30
 ```
 
-安装器会注册当前用户登录自启任务并立即启动。本地提交和推送只由文件事件触发；隐藏任务在工作区干净时每 60 秒静默拉取手机更新，不会调用 Obsidian 通知。
+安装器会注册当前用户登录自启任务并立即启动。本地提交和推送只由文件事件触发；停止编辑约 15 秒后提交并推送。隐藏任务在工作区干净时每 30 秒静默拉取手机更新，不会调用 Obsidian 通知。不要默认低于 10 秒，过短会制造大量碎提交并增加多设备冲突概率。
 
 安装器同时注册 `Obsidian Git Sync Watchdog ...` 守护任务。主任务和守护任务都通过 `wscript.exe` 与 `run-hidden.vbs` 隐藏启动 PowerShell，避免开机登录或周期检查时弹出 CLI 窗口。使用隐藏启动器后，主任务可能显示 `Running` 或 `Ready`；以 `verify-sync.ps1` 输出的 `watcherProcesses` 判断真实监听是否存活。守护任务每分钟检查真实的 `watch-vault.ps1` 进程，若主监听因睡眠、电池、系统中断或异常退出而停止，会自动重新启动。
 
@@ -218,11 +218,11 @@ Prefer the bundled Windows event watcher when the user requests edit-event synch
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 `
   -VaultPath "C:\path\to\vault" `
-  -DebounceSeconds 60 `
-  -PullIntervalSeconds 60
+  -DebounceSeconds 15 `
+  -PullIntervalSeconds 30
 ```
 
-The installer registers a per-user logon task and starts it immediately. Local commits and pushes occur only after file events; a hidden clean-worktree pull checks for phone updates every 60 seconds without using Obsidian notices.
+The installer registers a per-user logon task and starts it immediately. Local commits and pushes occur only after file events and a short quiet period; a hidden clean-worktree pull checks for phone updates every 30 seconds without using Obsidian notices. Use 15 seconds for responsive desktop sync; avoid values below 10 seconds unless the user explicitly accepts many small commits and higher conflict risk.
 
 The installer also registers an `Obsidian Git Sync Watchdog ...` task. Both the main task and watchdog launch PowerShell through `wscript.exe` and `run-hidden.vbs`, avoiding CLI windows at logon and during periodic checks. With the hidden launcher, the main task may appear as `Running` or `Ready`; use `watcherProcesses` from `verify-sync.ps1` to determine whether the real watcher is alive. The watchdog checks the real `watch-vault.ps1` process every minute and restarts it after sleep, battery transitions, system interruption, or abnormal exit.
 
