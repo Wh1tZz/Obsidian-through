@@ -13,6 +13,7 @@ Obsidian-through Skill 会帮你完成整个同步环境的搭建，包括创建
 * 创建 GitHub 私有笔记仓库
 * 将 PC 端现有的 Obsidian 笔记上传到 GitHub
 * 配置 Windows 自动提交、拉取和上传
+* 守护 Windows 后台同步任务，异常停止后自动恢复
 * 指导 iPhone 安装和配置 Obsidian Git
 * 让手机、电脑和 GitHub 保持同步
 * 检查并修复常见的 Pull、Push 和认证问题
@@ -116,6 +117,7 @@ You do not need to learn complicated Git commands or piece together instructions
 * Create a private GitHub repository for your notes
 * Upload an existing Obsidian vault from your PC to GitHub
 * Configure automatic commit, pull, and push on Windows
+* Watch the Windows background sync task and recover it automatically
 * Guide the installation and configuration of Obsidian Git on iPhone
 * Keep your phone, computer, and GitHub repository synchronized
 * Diagnose and fix common Pull, Push, and authentication problems

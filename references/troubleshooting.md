@@ -39,10 +39,15 @@
 ## Windows 事件同步漏掉改动
 
 - 确认计划任务存在。
+- 确认 `Obsidian Git Event Sync ...` 主任务为 `Running`；若不是，确认 `Obsidian Git Sync Watchdog ...` 存在并会重新拉起它。
 - 确认日志包含 `watcher started`。
 - 使用 Skill 附带的事件队列监听器；阻塞式监听器可能在 Git 推送时漏掉事件。
 - 忽略 `.git` 事件，避免循环触发。
 - 仅在获得授权后运行 `verify-sync.ps1 -RunEventProbe`。
+
+## Windows 主同步任务停止在 Ready
+
+重新运行 `scripts/install-windows-event-sync.ps1`。安装器会为主任务启用失败自动重启、取消电池停止限制，并注册每分钟运行一次的 watchdog。验证时主任务应为 `Running`，watchdog 通常为 `Ready`；watchdog 日志出现 `started target task` 表示它已经自动恢复过主任务。
 
 ## Windows 右上角持续出现 Pull 或 Push 弹窗
 
@@ -107,10 +112,15 @@ Pull before editing, open the existing note from the file list, and edit its bod
 ## Windows event sync misses changes
 
 - Confirm the scheduled task exists.
+- Confirm the main `Obsidian Git Event Sync ...` task is `Running`; if not, confirm the `Obsidian Git Sync Watchdog ...` task exists and restarts it.
 - Confirm the log reports `watcher started`.
 - Use the bundled event-queue watcher; blocking watchers can miss events during Git push.
 - Ignore `.git` events to prevent loops.
 - Run `verify-sync.ps1 -RunEventProbe` only after authorization.
+
+## Windows main sync task is stuck in Ready
+
+Run `scripts/install-windows-event-sync.ps1` again. The installer enables restart-on-failure for the main task, removes battery-stop restrictions, and registers a watchdog that runs every minute. During verification, the main task should be `Running` and the watchdog usually appears as `Ready`; `started target task` in the watchdog log means it has automatically recovered the main task.
 
 ## Windows repeatedly shows Pull or Push notices
 

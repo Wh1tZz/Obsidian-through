@@ -80,6 +80,8 @@ powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 
 
 该任务监听创建、修改、重命名和删除。停止编辑 60 秒后自动提交、变基远端更新并推送。没有本地编辑时不会提交或推送；工作区干净时每 60 秒通过隐藏任务静默拉取手机更新。
 
+安装脚本还会创建 `Obsidian Git Sync Watchdog ...` 计划任务。主任务 `Obsidian Git Event Sync ...` 应保持 `Running`；守护任务每分钟短暂运行一次，正常状态通常是 `Ready`。若主任务因睡眠、断电、电池策略或异常退出而停止，守护任务会重新启动主任务。
+
 运行以下脚本自动设置 Windows Obsidian Git：
 
 ```powershell
@@ -96,6 +98,8 @@ powershell -ExecutionPolicy Bypass -File scripts/configure-windows-obsidian-git.
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 -VaultPath "C:\笔记库路径"
 ```
+
+检查结果应同时包含 `watcherTasks` 和 `watchdogTasks`。主任务应为 `Running`，守护任务可为 `Ready`。
 
 用户授权临时测试文件后：
 
@@ -199,6 +203,8 @@ powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 
 
 The task listens for create, modify, rename, and delete events. Sixty quiet seconds trigger commit, rebase, and push. With no local edits, it does not commit or push; a hidden clean-worktree pull checks for phone updates every 60 seconds.
 
+The installer also creates an `Obsidian Git Sync Watchdog ...` scheduled task. The main `Obsidian Git Event Sync ...` task should stay `Running`; the watchdog runs briefly every minute and normally appears as `Ready`. If the main task stops after sleep, power changes, battery policy, or an abnormal exit, the watchdog starts it again.
+
 Run:
 
 ```powershell
@@ -215,6 +221,8 @@ Noninvasive check:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 -VaultPath "C:\path\to\vault"
 ```
+
+The result should include both `watcherTasks` and `watchdogTasks`. The watcher should be `Running`; the watchdog may be `Ready`.
 
 After authorization for temporary test files:
 

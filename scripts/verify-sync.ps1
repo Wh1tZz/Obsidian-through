@@ -69,6 +69,7 @@ $localHash = (Invoke-Git rev-parse HEAD | Select-Object -First 1).Trim()
 $remoteHash = Get-RemoteHash
 $status = @(Invoke-Git status --porcelain --untracked-files=all)
 $tasks = @(Get-ScheduledTask -TaskName "Obsidian Git Event Sync *" -ErrorAction SilentlyContinue)
+$watchdogTasks = @(Get-ScheduledTask -TaskName "Obsidian Git Sync Watchdog *" -ErrorAction SilentlyContinue)
 
 $visibility = "unknown"
 $gh = Get-Command gh.exe -ErrorAction SilentlyContinue
@@ -145,6 +146,7 @@ $result = [pscustomobject]@{
     localHash = $localHash
     remoteHash = $remoteHash
     watcherTasks = @($tasks | ForEach-Object { [pscustomobject]@{ name = $_.TaskName; state = $_.State.ToString() } })
+    watchdogTasks = @($watchdogTasks | ForEach-Object { [pscustomobject]@{ name = $_.TaskName; state = $_.State.ToString() } })
     eventProbe = $probe
     remotePullProbe = $remotePullProbe
 }
