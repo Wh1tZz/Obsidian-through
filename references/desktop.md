@@ -49,7 +49,7 @@ powershell -ExecutionPolicy Bypass -File scripts/github-web-login.ps1
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/publish-vault.ps1 `
   -VaultPath "C:\笔记库路径" `
-  -RepositoryName "obsidian-vault" `
+  -RepositoryName "<repository-name>" `
   -ConfirmUpload
 ```
 
@@ -174,7 +174,7 @@ After the user authorizes uploading the exact local path to the named private re
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/publish-vault.ps1 `
   -VaultPath "C:\path\to\vault" `
-  -RepositoryName "obsidian-vault" `
+  -RepositoryName "<repository-name>" `
   -ConfirmUpload
 ```
 

@@ -36,6 +36,49 @@
 
 编辑前先拉取，从文件列表打开已有笔记并修改正文。点击不存在的内部链接、使用“新建笔记”或更改标题都会创建不同路径。
 
+## Pull、Commit 和自动同步的关系
+
+- `Git: Pull` 只把 GitHub 上的最新版本拉到本机，不会上传本机修改。
+- `Git: Commit-and-sync` 才会提交本机修改、拉取远端更新并推送到 GitHub。
+- `Auto commit-and-sync interval = 1` 表示停止编辑后约 1 分钟触发提交同步；用户想立即上传时，运行 `Git: Commit-and-sync`。
+- 用户 Pull 后继续修改笔记，后续提交的是修改后的最新本地稿，不是 Pull 那一刻的旧稿。
+- 编辑前先 Pull 的意义是拿到最新底稿，减少旧版本编辑导致的冲突或推送拒绝。
+
+## 误删笔记恢复
+
+先阻止扩大损失：要求用户暂停所有设备的 Push、Commit-and-sync 和强制同步。不要使用 `git reset --hard`、不要 force push、不要恢复整个 vault 覆盖当前内容。
+
+在 Windows 或任意完整 Git 工作副本中先列出最近删除记录：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/restore-deleted-note.ps1 `
+  -VaultPath "C:\path\to\vault" -ListDeleted
+```
+
+向用户显示删除文件路径、删除时间和提交信息，并让用户确认要恢复的具体文件。确认后只恢复那一篇：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/restore-deleted-note.ps1 `
+  -VaultPath "C:\path\to\vault" `
+  -NotePath "folder/deleted-note.md" `
+  -Commit -Push
+```
+
+脚本会从删除提交的父提交中恢复文件，重新提交为 `Restore accidentally deleted note`，并在请求 `-Push` 时推送。恢复后让其他设备运行 `Git: Pull` 验证。若工作区不干净，先处理当前改动，不要覆盖用户笔记。
+
+## 四端或多端同步策略
+
+四端可以使用同一个私有仓库，但不要让所有设备都成为自动写入主力。推荐角色：
+
+```text
+GitHub = 中央仓库
+Windows PC = 主同步端，事件监听自动提交，静默定时 Pull
+主手机 = 移动写作端，可开启 1 分钟 Auto commit-and-sync
+第二手机/第四端 = 查看或轻量编辑端，默认手动 Pull 与 Commit-and-sync
+```
+
+新增设备时逐台验收：先 Windows 与 GitHub，再主手机，再第二手机，再第四端。每台设备必须先 Pull、再编辑、再 Commit-and-sync。禁止多端同时编辑同一篇笔记；建议移动端新内容先写入 `手机收件箱/`，回到电脑后再整理。若第二手机也要频繁写作，不要同时开启多个手机的自动提交，优先使用手动命令。
+
 ## Windows 事件同步漏掉改动
 
 - 确认计划任务存在。
@@ -112,6 +155,49 @@ Inspect commit status:
 - Delete plus add may also represent a rename.
 
 Pull before editing, open the existing note from the file list, and edit its body. Tapping a nonexistent internal link, using New Note, or changing the title creates a different path.
+
+## Pull, commit, and automatic sync
+
+- `Git: Pull` only downloads the newest version from GitHub to the local device. It does not upload local edits.
+- `Git: Commit-and-sync` commits local edits, pulls remote changes, and pushes to GitHub.
+- `Auto commit-and-sync interval = 1` means sync runs about one minute after editing stops. To upload immediately, run `Git: Commit-and-sync`.
+- If the user pulls and then edits a note, the later sync uploads the edited local draft, not the draft as it existed at pull time.
+- Pull before editing gives the user the newest base draft and reduces conflicts or push rejections from stale local copies.
+
+## Recover an accidentally deleted note
+
+First limit the damage: ask the user to pause Push, Commit-and-sync, and force synchronization on every device. Do not use `git reset --hard`, do not force push, and do not restore the whole vault over current content.
+
+On Windows or any complete Git worktree, list recent deletions first:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/restore-deleted-note.ps1 `
+  -VaultPath "C:\path\to\vault" -ListDeleted
+```
+
+Show the deleted paths, deletion times, and commit subjects to the user, then ask them to confirm exactly which file to restore. After confirmation, restore only that note:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/restore-deleted-note.ps1 `
+  -VaultPath "C:\path\to\vault" `
+  -NotePath "folder/deleted-note.md" `
+  -Commit -Push
+```
+
+The script restores the file from the parent of the deletion commit, commits it as `Restore accidentally deleted note`, and pushes when `-Push` is requested. After recovery, ask other devices to run `Git: Pull`. If the worktree is dirty, resolve or preserve current changes first; never overwrite user notes.
+
+## Four-endpoint or multi-device sync strategy
+
+Four devices can share one private repository, but not every device should be an automatic writing endpoint. Recommended roles:
+
+```text
+GitHub = central repository
+Windows PC = primary sync endpoint with event commits and silent periodic Pull
+Main phone = mobile writing endpoint with one-minute Auto commit-and-sync
+Second phone / fourth endpoint = reading or light-editing endpoint using manual Pull and Commit-and-sync by default
+```
+
+Validate devices one at a time: Windows with GitHub, then the main phone, then the second phone, then the fourth endpoint. Every device should Pull before editing and Commit-and-sync after editing. Do not edit the same note on multiple devices at the same time. Prefer a `Mobile Inbox/` or `手机收件箱/` folder for mobile captures, then organize notes on desktop. If a second phone also writes frequently, avoid enabling automatic commit on multiple phones; prefer manual commands.
 
 ## Windows event sync misses changes
 

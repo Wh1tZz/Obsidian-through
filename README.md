@@ -1,205 +1,157 @@
 # Obsidian-through
 
-随时随地在 iPhone 的 Obsidian 中写下一篇笔记，它都可以同步到 PC 端的 Obsidian 和 GitHub 私有仓库中。
+Obsidian-through is a reusable workflow skill for setting up private Obsidian synchronization through GitHub.
 
-Obsidian-through Skill 会帮你完成整个同步环境的搭建，包括创建 GitHub 私有仓库、上传现有笔记、配置电脑自动同步，以及指导你将 iPhone 上的 Obsidian 连接到 GitHub。
-
-你不需要学习复杂的 Git 命令，也不需要在不同教程之间反复查找配置方法。安装这个 Skill 后，只需要告诉你的 Agent 你想实现 Obsidian 多端同步，它就会按照完整流程帮助你进行配置、检查和问题修复。
+It helps connect a Windows Obsidian vault, a private GitHub repository, and Obsidian on iPhone or Android. It is not a new sync service or Obsidian plugin. The actual synchronization is handled by Git, GitHub, and Obsidian Git; this skill provides the setup, verification, repair, and recovery workflow.
 
 ---
 
-## 它能做什么？
+## What It Solves
 
-* 创建 GitHub 私有笔记仓库
-* 将 PC 端现有的 Obsidian 笔记上传到 GitHub
-* 配置 Windows 自动提交、拉取和上传
-* 守护 Windows 后台同步任务，异常停止后自动恢复
-* 指导 iPhone 安装和配置 Obsidian Git
-* 让手机、电脑和 GitHub 保持同步
-* 检查并修复常见的 Pull、Push 和认证问题
-* 验证笔记是否可以正常双向同步
+* Set up a private GitHub repository for an Obsidian vault
+* Upload an existing Windows Obsidian vault safely
+* Configure Windows event-based automatic sync
+* Guide mobile Obsidian Git setup step by step
+* Explain Pull, Commit, Push, and Commit-and-sync clearly
+* Keep device-specific Obsidian Git settings local
+* Diagnose failed Pull, Push, authentication, network, and conflict issues
+* Recover accidentally deleted notes from Git history
+* Provide safer guidance for three-device and four-device sync
 
 ---
 
-## 同步方式
+## Sync Model
 
 ```text
-iPhone Obsidian
-       ↕
-GitHub 私有仓库
-       ↕
-PC 端 Obsidian
-```
-
-在 iPhone 上记录的笔记，可以通过 GitHub 同步到电脑。
-
-在电脑上修改的内容，也可以上传到 GitHub，并同步回 iPhone。
-
----
-
-## 安装方法
-
-请先确保电脑已经安装 Node.js 18 或更高版本。
-
-在终端中运行：
-
-```bash
-npx skills add Wh1tZz/Obsidian-through -g
-```
-
-安装完成后，在支持 Agent Skills 的 Agent 中使用。
-
----
-
-## 使用方法
-
-安装完成后，直接告诉你的 Agent：
-
-```text
-使用 obsidian-through，帮我配置 PC、GitHub 私有仓库和 iPhone Obsidian 三端同步。
-```
-
-Agent 会按照以下流程帮助你完成配置：
-
-```text
-检查电脑环境
-→ 登录 GitHub
-→ 创建私有仓库
-→ 上传现有笔记
-→ 配置 PC 自动同步
-→ 指导 iPhone 连接 GitHub
-→ 测试双向同步
-```
-
-已经配置过但无法正常同步时，也可以告诉你的 Agent：
-
-```text
-使用 obsidian-through，帮我检查并修复 Obsidian 同步问题。
-```
-
----
-
-## 注意事项
-
-* 笔记默认上传到 GitHub 私有仓库
-* 上传前请确认本地笔记库路径和仓库名称
-* 不要将 GitHub Token 发送到聊天窗口
-* iPhone 可能无法长期在后台自动运行同步
-* 建议在手机开始编辑前执行一次 Pull
-* 编辑完成后执行 Commit-and-sync
-* 不建议同时使用 Git 和 iCloud 同步同一个笔记库
-* 尽量避免在手机和电脑上同时修改同一篇笔记
-
----
-
-## 说明
-
-Obsidian-through 不是新的 Obsidian 同步插件。
-
-它是一个帮助 Agent 搭建、检查和修复 Obsidian Git 同步环境的 Skill。
-
-实际的笔记同步由 Obsidian Git 和 GitHub 完成，Obsidian-through 负责帮助你的 Agent 正确完成整套配置流程。
-
----
-
-# English Version
-
-Write a note in Obsidian on your iPhone wherever you are, then sync it to Obsidian on your PC and to a private GitHub repository.
-
-The Obsidian-through Skill helps set up the complete synchronization environment. It can create a private GitHub repository, upload your existing notes, configure automatic synchronization on your computer, and guide you through connecting Obsidian on your iPhone to GitHub.
-
-You do not need to learn complicated Git commands or piece together instructions from multiple tutorials. After installing this Skill, simply tell your Agent that you want multi-device Obsidian synchronization. It will guide you through setup, verification, and troubleshooting using a complete workflow.
-
----
-
-## What can it do?
-
-* Create a private GitHub repository for your notes
-* Upload an existing Obsidian vault from your PC to GitHub
-* Configure automatic commit, pull, and push on Windows
-* Watch the Windows background sync task and recover it automatically
-* Guide the installation and configuration of Obsidian Git on iPhone
-* Keep your phone, computer, and GitHub repository synchronized
-* Diagnose and fix common Pull, Push, and authentication problems
-* Verify that notes synchronize correctly in both directions
-
----
-
-## Synchronization flow
-
-```text
-iPhone Obsidian
-       ↕
+Windows Obsidian vault
+        ↕
 Private GitHub repository
-       ↕
-PC Obsidian
+        ↕
+iPhone / Android Obsidian vault
 ```
 
-Notes written on your iPhone can be synchronized to your computer through GitHub.
-
-Changes made on your computer can also be pushed to GitHub and synchronized back to your iPhone.
+Each device keeps a local copy of the vault. GitHub acts as the private transfer hub.
 
 ---
 
 ## Installation
 
-Make sure Node.js 18 or newer is installed on your computer.
-
-Run this command in a terminal:
+Install from a GitHub repository:
 
 ```bash
-npx skills add Wh1tZz/Obsidian-through -g
+npx skills add <github-owner>/Obsidian-through -g
 ```
 
-After installation, use the Skill with any Agent that supports Agent Skills.
+Replace `<github-owner>` with the repository owner that hosts this skill.
 
 ---
 
 ## Usage
 
-After installation, tell your Agent:
+Ask your skill-enabled AI tool to use `obsidian-through` for one of these tasks:
 
 ```text
-Use obsidian-through to configure synchronization across my PC, a private GitHub repository, and Obsidian on my iPhone.
+Use obsidian-through to configure Obsidian sync across Windows, GitHub, and my phone.
 ```
-
-The Agent will guide you through this workflow:
 
 ```text
-Check the computer environment
-→ Sign in to GitHub
-→ Create a private repository
-→ Upload existing notes
-→ Configure automatic PC synchronization
-→ Connect the iPhone to GitHub
-→ Test two-way synchronization
+Use obsidian-through to inspect and repair my Obsidian Git sync.
 ```
-
-If synchronization has already been configured but is not working, tell your Agent:
 
 ```text
-Use obsidian-through to inspect and repair my Obsidian synchronization.
+Use obsidian-through to recover an accidentally deleted Obsidian note.
 ```
+
+The workflow reads the current user's GitHub login, vault path, repository remote, and repository visibility at runtime. It must not reuse another user's username, email, repository name, local path, token, or previous chat context.
 
 ---
 
-## Important notes
+## Notes
 
-* Notes are uploaded to a private GitHub repository by default
-* Confirm the local vault path and repository name before uploading
-* Never send your GitHub Token through a chat window
-* iPhone may not keep synchronization running continuously in the background
-* Run Pull before you start editing on your phone
-* Run Commit-and-sync after you finish editing
-* Do not use Git and iCloud to synchronize the same vault
-* Avoid editing the same note on your phone and computer at the same time
+* Use a private GitHub repository for personal notes.
+* Never paste GitHub tokens into chat, notes, screenshots, or repository URLs.
+* Do not sync the same vault with both Git and iCloud.
+* Pull before editing on mobile.
+* Commit-and-sync after editing on mobile.
+* Avoid editing the same note on multiple devices at the same time.
+* Test synchronization with dedicated test notes, not important drafts.
 
 ---
 
-## About
+# 中文版
 
-Obsidian-through is not a new Obsidian synchronization plugin.
+Obsidian-through 是一个可复用的工作流 Skill，用于通过 GitHub 搭建 Obsidian 私有同步。
 
-It is a Skill that helps an Agent set up, inspect, and repair an Obsidian Git synchronization environment.
+它可以帮助连接 Windows 端 Obsidian 笔记库、GitHub 私有仓库，以及 iPhone 或 Android 上的 Obsidian。它不是新的同步服务，也不是新的 Obsidian 插件。真正的同步由 Git、GitHub 和 Obsidian Git 完成；这个 Skill 负责提供配置、验证、修复和恢复流程。
 
-The actual note synchronization is handled by Obsidian Git and GitHub. Obsidian-through helps your Agent configure the complete workflow correctly.
+---
+
+## 解决什么问题
+
+* 创建 Obsidian 私有 GitHub 仓库
+* 安全上传 Windows 端已有笔记库
+* 配置 Windows 事件触发自动同步
+* 按步骤指导手机端 Obsidian Git 配置
+* 清楚解释 Pull、Commit、Push、Commit-and-sync
+* 让不同设备的 Obsidian Git 设置保持本地独立
+* 排查 Pull、Push、认证、网络和冲突问题
+* 从 Git 历史恢复误删笔记
+* 为三端和四端同步提供更稳妥的使用策略
+
+---
+
+## 同步模型
+
+```text
+Windows Obsidian 笔记库
+        ↕
+GitHub 私有仓库
+        ↕
+iPhone / Android Obsidian 笔记库
+```
+
+每台设备都有一份本地笔记库。GitHub 作为私有中转仓库。
+
+---
+
+## 安装
+
+从 GitHub 仓库安装：
+
+```bash
+npx skills add <github-owner>/Obsidian-through -g
+```
+
+将 `<github-owner>` 替换为托管此 Skill 的仓库所有者。
+
+---
+
+## 使用
+
+在支持 Skill 的 AI 工具中调用 `obsidian-through`：
+
+```text
+使用 obsidian-through，帮我配置 Windows、GitHub 和手机端 Obsidian 同步。
+```
+
+```text
+使用 obsidian-through，帮我检查并修复 Obsidian Git 同步。
+```
+
+```text
+使用 obsidian-through，帮我恢复误删的 Obsidian 笔记。
+```
+
+这个工作流必须在运行时读取当前用户的 GitHub 登录、笔记库路径、远端仓库和仓库可见性。不得复用其他用户的用户名、邮箱、仓库名、本地路径、Token 或历史对话上下文。
+
+---
+
+## 注意事项
+
+* 个人笔记应使用 GitHub 私有仓库。
+* 不要把 GitHub Token 发到聊天、笔记、截图或仓库 URL 中。
+* 不要同时用 Git 和 iCloud 同步同一个 vault。
+* 手机端编辑前先 Pull。
+* 手机端编辑后执行 Commit-and-sync。
+* 尽量避免多台设备同时编辑同一篇笔记。
+* 测试同步时使用专门测试笔记，不要拿重要草稿测试。
