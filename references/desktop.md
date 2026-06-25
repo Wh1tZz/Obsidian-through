@@ -30,6 +30,15 @@ powershell -ExecutionPolicy Bypass -File scripts/github-web-login.ps1
 
 不要代替用户输入 GitHub 密码，不要索取验证码，不要输出 GitHub CLI Token。
 
+如果网络需要本机代理，允许用户传入代理地址：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/github-web-login.ps1 `
+  -Proxy "http://127.0.0.1:7890"
+```
+
+登录脚本会直接打开 GitHub device 授权页面。若 GitHub CLI 显示一次性 code，让用户把 PowerShell 窗口里的 code 填到浏览器页面；不要要求用户把 code、密码或 Token 发到聊天中。
+
 ### 3. 定位 Obsidian 笔记库
 
 优先读取 Obsidian 应用配置中的 vault 路径。确认目标目录包含笔记和 `.obsidian`，不要把 Obsidian 软件安装目录当作笔记库。
@@ -49,9 +58,12 @@ powershell -ExecutionPolicy Bypass -File scripts/github-web-login.ps1
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/publish-vault.ps1 `
   -VaultPath "C:\笔记库路径" `
-  -RepositoryName "<repository-name>" `
+  -RepositoryUrl "https://github.com/<owner>/<repository>.git" `
+  -OpenRepositoryPage `
   -ConfirmUpload
 ```
+
+优先让用户直接提供完整 GitHub 仓库 URL，而不是反复拆分 owner 和仓库名。脚本会从 URL 中解析 owner 和 repository，并打开 GitHub 仓库页或新建仓库页，供用户确认连接的是正确的私有仓库。若用户没有现成仓库，也可改用 `-RepositoryName "<repository-name>"` 创建当前 GitHub 账号下的私有仓库。
 
 脚本会：
 
@@ -155,6 +167,15 @@ The script checks the current session first. If unauthenticated, `gh auth login 
 
 Never enter the user's GitHub password, request verification codes, or print the GitHub CLI token.
 
+If the network needs a local proxy, let the user pass it explicitly:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/github-web-login.ps1 `
+  -Proxy "http://127.0.0.1:7890"
+```
+
+The login script opens the GitHub device authorization page directly. If GitHub CLI shows a one-time code, ask the user to enter the code from the PowerShell window into the browser page. Do not ask the user to send the code, password, or token in chat.
+
 ### 3. Locate the Obsidian vault
 
 Prefer the vault path recorded by Obsidian. Confirm the directory contains notes and `.obsidian`; do not confuse it with the Obsidian installation directory.
@@ -174,9 +195,12 @@ After the user authorizes uploading the exact local path to the named private re
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/publish-vault.ps1 `
   -VaultPath "C:\path\to\vault" `
-  -RepositoryName "<repository-name>" `
+  -RepositoryUrl "https://github.com/<owner>/<repository>.git" `
+  -OpenRepositoryPage `
   -ConfirmUpload
 ```
+
+Prefer a complete GitHub repository URL instead of asking the user to split owner and repository names repeatedly. The script parses owner and repository from the URL and opens the GitHub repository page or new repository page so the user can confirm the intended private repository. If the user does not already have a repository, use `-RepositoryName "<repository-name>"` to create one under the authenticated GitHub account.
 
 The script:
 

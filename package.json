@@ -1,0 +1,20 @@
+{
+  "name": "obsidian-through",
+  "version": "0.1.0",
+  "description": "Private Obsidian synchronization workflow through GitHub.",
+  "bin": {
+    "obsidian-through": "./bin/obsidian-through.js"
+  },
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "LICENSE",
+    "bin/",
+    "scripts/",
+    "references/"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

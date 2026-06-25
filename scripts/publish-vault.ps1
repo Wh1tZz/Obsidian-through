@@ -2,14 +2,15 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$VaultPath,
-    [Parameter(Mandatory = $true)]
     [ValidatePattern('^[A-Za-z0-9._-]+$')]
-    [string]$RepositoryName,
+    [string]$RepositoryName = "",
+    [string]$RepositoryUrl = "",
     [string]$Owner = "",
     [string]$GitExe = "",
     [string]$GhExe = "",
     [string]$Branch = "main",
-    [switch]$ConfirmUpload
+    [switch]$ConfirmUpload,
+    [switch]$OpenRepositoryPage
 )
 
 $ErrorActionPreference = "Stop"
@@ -40,9 +41,23 @@ $GhExe = (Resolve-Path -LiteralPath $GhExe).Path
 & $GhExe auth status --hostname github.com *> $null
 if ($LASTEXITCODE -ne 0) { throw "GitHub CLI is not authenticated. Run github-web-login.ps1 first." }
 $account = & $GhExe api user | ConvertFrom-Json
+
+if ($RepositoryUrl) {
+    $normalizedRepositoryUrl = $RepositoryUrl.Trim()
+    if ($normalizedRepositoryUrl -notmatch 'github\.com[/:]([^/]+)/([^/\s]+)/?$') {
+        throw "RepositoryUrl must be a GitHub repository URL, such as https://github.com/owner/repository.git"
+    }
+    if (-not $Owner) { $Owner = $Matches[1] }
+    if (-not $RepositoryName) { $RepositoryName = $Matches[2] -replace '\.git$', '' }
+}
+if (-not $RepositoryName) {
+    throw "RepositoryName or RepositoryUrl is required."
+}
 if (-not $Owner) { $Owner = $account.login }
 $repoFullName = "$Owner/$RepositoryName"
 $repoUrl = "https://github.com/$repoFullName.git"
+$repoWebUrl = "https://github.com/$repoFullName"
+if ($OpenRepositoryPage) { Start-Process $repoWebUrl }
 
 $largeFiles = @(Get-ChildItem -LiteralPath $VaultPath -Recurse -Force -File -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' -and $_.Length -gt 95MB })
@@ -91,6 +106,9 @@ if ($repoExists) {
     $repo = $repoJson | ConvertFrom-Json
     if ($repo.visibility -ne "PRIVATE") { throw "Existing repository is not private: $repoFullName" }
 } else {
+    if ($OpenRepositoryPage) {
+        Start-Process "https://github.com/new?name=$RepositoryName&visibility=private"
+    }
     & $GhExe repo create $repoFullName --private
     if ($LASTEXITCODE -ne 0) { throw "Unable to create the private GitHub repository." }
 }

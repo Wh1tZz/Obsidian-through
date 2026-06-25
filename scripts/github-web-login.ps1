@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string]$GhExe = ""
+    [string]$GhExe = "",
+    [string]$Proxy = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,9 +14,15 @@ if (-not $GhExe) {
 }
 $GhExe = (Resolve-Path -LiteralPath $GhExe).Path
 
+if ($Proxy) {
+    $env:HTTPS_PROXY = $Proxy
+    $env:HTTP_PROXY = $Proxy
+}
+
 & $GhExe auth status --hostname github.com *> $null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Opening GitHub web authorization. Complete login in your browser..."
+    Start-Process "https://github.com/login/device"
     & $GhExe auth login --hostname github.com --git-protocol https --web
     if ($LASTEXITCODE -ne 0) { throw "GitHub web login did not complete." }
 }

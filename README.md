@@ -1,157 +1,275 @@
 # Obsidian-through
 
-Obsidian-through is a reusable workflow skill for setting up private Obsidian synchronization through GitHub.
+随时随地在手机端 Obsidian 中写下一篇笔记，它都可以同步到电脑端 Obsidian 和 GitHub 私有仓库中。
 
-It helps connect a Windows Obsidian vault, a private GitHub repository, and Obsidian on iPhone or Android. It is not a new sync service or Obsidian plugin. The actual synchronization is handled by Git, GitHub, and Obsidian Git; this skill provides the setup, verification, repair, and recovery workflow.
+Obsidian-through 会帮助完成整套同步环境的搭建，包括创建或连接 GitHub 私有仓库、上传现有笔记、配置 Windows 自动同步，以及指导手机端 Obsidian Git 连接到 GitHub。
 
----
-
-## What It Solves
-
-* Set up a private GitHub repository for an Obsidian vault
-* Upload an existing Windows Obsidian vault safely
-* Configure Windows event-based automatic sync
-* Guide mobile Obsidian Git setup step by step
-* Explain Pull, Commit, Push, and Commit-and-sync clearly
-* Keep device-specific Obsidian Git settings local
-* Diagnose failed Pull, Push, authentication, network, and conflict issues
-* Recover accidentally deleted notes from Git history
-* Provide safer guidance for three-device and four-device sync
+你不需要学习复杂的 Git 命令，也不需要在不同教程之间反复查找配置方法。安装后，只需要说明你想实现 Obsidian 多端同步，工具就会按照完整流程进行配置、检查和问题修复。
 
 ---
 
-## Sync Model
+## 它能做什么？
 
-```text
-Windows Obsidian vault
-        ↕
-Private GitHub repository
-        ↕
-iPhone / Android Obsidian vault
-```
-
-Each device keeps a local copy of the vault. GitHub acts as the private transfer hub.
-
----
-
-## Installation
-
-Install from a GitHub repository:
-
-```bash
-npx skills add <github-owner>/Obsidian-through -g
-```
-
-Replace `<github-owner>` with the repository owner that hosts this skill.
-
----
-
-## Usage
-
-Ask your skill-enabled AI tool to use `obsidian-through` for one of these tasks:
-
-```text
-Use obsidian-through to configure Obsidian sync across Windows, GitHub, and my phone.
-```
-
-```text
-Use obsidian-through to inspect and repair my Obsidian Git sync.
-```
-
-```text
-Use obsidian-through to recover an accidentally deleted Obsidian note.
-```
-
-The workflow reads the current user's GitHub login, vault path, repository remote, and repository visibility at runtime. It must not reuse another user's username, email, repository name, local path, token, or previous chat context.
-
----
-
-## Notes
-
-* Use a private GitHub repository for personal notes.
-* Never paste GitHub tokens into chat, notes, screenshots, or repository URLs.
-* Do not sync the same vault with both Git and iCloud.
-* Pull before editing on mobile.
-* Commit-and-sync after editing on mobile.
-* Avoid editing the same note on multiple devices at the same time.
-* Test synchronization with dedicated test notes, not important drafts.
-
----
-
-# 中文版
-
-Obsidian-through 是一个可复用的工作流 Skill，用于通过 GitHub 搭建 Obsidian 私有同步。
-
-它可以帮助连接 Windows 端 Obsidian 笔记库、GitHub 私有仓库，以及 iPhone 或 Android 上的 Obsidian。它不是新的同步服务，也不是新的 Obsidian 插件。真正的同步由 Git、GitHub 和 Obsidian Git 完成；这个 Skill 负责提供配置、验证、修复和恢复流程。
-
----
-
-## 解决什么问题
-
-* 创建 Obsidian 私有 GitHub 仓库
-* 安全上传 Windows 端已有笔记库
-* 配置 Windows 事件触发自动同步
-* 按步骤指导手机端 Obsidian Git 配置
-* 清楚解释 Pull、Commit、Push、Commit-and-sync
-* 让不同设备的 Obsidian Git 设置保持本地独立
-* 排查 Pull、Push、认证、网络和冲突问题
+* 检查并安装 Git、GitHub CLI 等必要工具
+* 打开 GitHub 登录授权页面
+* 创建或连接 GitHub 私有笔记仓库
+* 将电脑端现有 Obsidian 笔记上传到 GitHub
+* 配置 Windows 自动提交、拉取和上传
+* 守护 Windows 后台同步任务，异常停止后自动恢复
+* 指导 iPhone / Android 安装和配置 Obsidian Git
+* 解释 Pull、Commit、Push、Commit-and-sync 的区别
+* 检查并修复常见的 Pull、Push、认证、网络和冲突问题
 * 从 Git 历史恢复误删笔记
-* 为三端和四端同步提供更稳妥的使用策略
+* 验证手机、电脑和 GitHub 是否可以正常双向同步
 
 ---
 
-## 同步模型
+## 同步方式
 
 ```text
-Windows Obsidian 笔记库
-        ↕
+手机端 Obsidian
+       ↕
 GitHub 私有仓库
-        ↕
-iPhone / Android Obsidian 笔记库
+       ↕
+电脑端 Obsidian
 ```
 
-每台设备都有一份本地笔记库。GitHub 作为私有中转仓库。
+手机上记录的笔记，可以通过 GitHub 同步到电脑。
+
+电脑上修改的内容，也可以上传到 GitHub，并同步回手机。
 
 ---
 
-## 安装
+## 安装方法
 
-从 GitHub 仓库安装：
+请先确保电脑已经安装 Node.js 18 或更高版本。
+
+推荐使用：
 
 ```bash
-npx skills add <github-owner>/Obsidian-through -g
+npx obsidian-through
 ```
 
-将 `<github-owner>` 替换为托管此 Skill 的仓库所有者。
+查看可用命令：
+
+```bash
+npx obsidian-through help
+```
+
+常用命令：
+
+```bash
+npx obsidian-through login
+npx obsidian-through publish --vault "C:\path\to\vault" --repo https://github.com/owner/private-vault.git --open
+npx obsidian-through verify --vault "C:\path\to\vault"
+npx obsidian-through mobile-info --vault "C:\path\to\vault" --open-token-page
+```
+
+如果当前运行环境不支持 npm 包安装，也可以直接把此 GitHub 仓库链接交给支持读取 GitHub 仓库的 AI 工具，让它使用仓库中的 `SKILL.md`、`scripts/` 和 `references/`。
 
 ---
 
-## 使用
+## GitHub 连接优化
 
-在支持 Skill 的 AI 工具中调用 `obsidian-through`：
+配置时不要反复手动拆分 owner、仓库名和 `.git` 地址。
 
-```text
-使用 obsidian-through，帮我配置 Windows、GitHub 和手机端 Obsidian 同步。
-```
+可以直接提供 GitHub 仓库网址：
 
 ```text
-使用 obsidian-through，帮我检查并修复 Obsidian Git 同步。
+https://github.com/owner/private-vault
 ```
+
+或：
+
+```text
+https://github.com/owner/private-vault.git
+```
+
+然后运行：
+
+```bash
+npx obsidian-through publish --vault "C:\path\to\vault" --repo https://github.com/owner/private-vault.git --open
+```
+
+`--open` 会打开目标 GitHub 仓库页面或新建仓库页面，方便确认当前连接的是正确的私有仓库。
+
+如果 GitHub 登录失败，先运行：
+
+```bash
+npx obsidian-through login
+```
+
+网络需要代理时：
+
+```bash
+npx obsidian-through login --proxy http://127.0.0.1:7890
+```
+
+登录过程中不需要把 GitHub 密码、验证码或 Token 发到聊天窗口。
+
+---
+
+## 使用方法
+
+配置电脑端同步：
+
+```text
+使用 obsidian-through，帮我配置电脑端 Obsidian、GitHub 私有仓库和手机端 Obsidian 同步。
+```
+
+检查已有同步：
+
+```text
+使用 obsidian-through，帮我检查并修复 Obsidian Git 同步问题。
+```
+
+恢复误删笔记：
 
 ```text
 使用 obsidian-through，帮我恢复误删的 Obsidian 笔记。
 ```
 
-这个工作流必须在运行时读取当前用户的 GitHub 登录、笔记库路径、远端仓库和仓库可见性。不得复用其他用户的用户名、邮箱、仓库名、本地路径、Token 或历史对话上下文。
-
 ---
 
 ## 注意事项
 
-* 个人笔记应使用 GitHub 私有仓库。
-* 不要把 GitHub Token 发到聊天、笔记、截图或仓库 URL 中。
-* 不要同时用 Git 和 iCloud 同步同一个 vault。
-* 手机端编辑前先 Pull。
-* 手机端编辑后执行 Commit-and-sync。
-* 尽量避免多台设备同时编辑同一篇笔记。
-* 测试同步时使用专门测试笔记，不要拿重要草稿测试。
+* 笔记默认应上传到 GitHub 私有仓库
+* 上传前必须确认本地笔记库路径和目标仓库
+* 不要将 GitHub Token 发送到聊天窗口、笔记、截图或仓库 URL
+* 手机端可能无法长期在后台自动运行同步
+* 建议手机开始编辑前执行 Pull
+* 编辑完成后执行 Commit-and-sync
+* 不建议同时使用 Git 和 iCloud 同步同一个笔记库
+* 尽量避免多台设备同时修改同一篇笔记
+* 测试删除时使用测试笔记，不要直接测试正式稿
+
+---
+
+## 说明
+
+Obsidian-through 不是新的 Obsidian 同步插件。
+
+它是一个帮助搭建、检查和修复 Obsidian Git 同步环境的工作流。
+
+实际的笔记同步由 Obsidian Git、GitHub 和本地 Git 完成，Obsidian-through 负责帮助正确完成整套配置流程。
+
+---
+
+# English Version
+
+Write a note in Obsidian on your phone, then sync it to Obsidian on your computer and to a private GitHub repository.
+
+Obsidian-through helps set up the complete synchronization environment: creating or connecting a private GitHub repository, uploading existing notes, configuring Windows automatic sync, and guiding mobile Obsidian Git setup.
+
+You do not need to learn complex Git commands or combine multiple tutorials. After installation, describe the Obsidian sync you want, and the workflow can guide setup, verification, and repair.
+
+---
+
+## What can it do?
+
+* Check and install Git, GitHub CLI, and required tools
+* Open the GitHub web login flow
+* Create or connect a private GitHub note repository
+* Upload an existing desktop Obsidian vault to GitHub
+* Configure automatic commit, pull, and push on Windows
+* Watch and recover the Windows background sync task
+* Guide Obsidian Git setup on iPhone / Android
+* Explain Pull, Commit, Push, and Commit-and-sync
+* Diagnose Pull, Push, authentication, network, and conflict issues
+* Recover accidentally deleted notes from Git history
+* Verify two-way sync across phone, computer, and GitHub
+
+---
+
+## Sync model
+
+```text
+Mobile Obsidian
+       ↕
+Private GitHub repository
+       ↕
+Desktop Obsidian
+```
+
+---
+
+## Installation
+
+Make sure Node.js 18 or newer is installed.
+
+Recommended:
+
+```bash
+npx obsidian-through
+```
+
+Show commands:
+
+```bash
+npx obsidian-through help
+```
+
+Common commands:
+
+```bash
+npx obsidian-through login
+npx obsidian-through publish --vault "C:\path\to\vault" --repo https://github.com/owner/private-vault.git --open
+npx obsidian-through verify --vault "C:\path\to\vault"
+npx obsidian-through mobile-info --vault "C:\path\to\vault" --open-token-page
+```
+
+If npm package installation is not available in the current environment, provide this GitHub repository link to any AI tool that can read repositories and ask it to use `SKILL.md`, `scripts/`, and `references/`.
+
+---
+
+## GitHub connection
+
+Do not repeatedly split owner, repository name, and `.git` URL by hand.
+
+Use the repository URL directly:
+
+```text
+https://github.com/owner/private-vault
+```
+
+or:
+
+```text
+https://github.com/owner/private-vault.git
+```
+
+Then run:
+
+```bash
+npx obsidian-through publish --vault "C:\path\to\vault" --repo https://github.com/owner/private-vault.git --open
+```
+
+`--open` opens the target GitHub repository page or new repository page so the user can confirm the correct private repository.
+
+If GitHub login fails, run:
+
+```bash
+npx obsidian-through login
+```
+
+If the network needs a proxy:
+
+```bash
+npx obsidian-through login --proxy http://127.0.0.1:7890
+```
+
+Never send GitHub passwords, verification codes, or tokens through chat.
+
+---
+
+## Notes
+
+* Use a private GitHub repository for notes
+* Confirm the local vault path and target repository before upload
+* Never paste GitHub tokens into chat, notes, screenshots, or repository URLs
+* Mobile automatic sync may not run continuously in the background
+* Pull before editing on mobile
+* Commit-and-sync after editing on mobile
+* Do not use Git and iCloud to sync the same vault
+* Avoid editing the same note on multiple devices at the same time
+* Test deletion with test notes, not important drafts

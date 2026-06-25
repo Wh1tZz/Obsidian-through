@@ -22,7 +22,7 @@ description: Configure, repair, explain, and verify private Obsidian synchroniza
 3. 检查 `gh auth status`。未登录时运行 `scripts/github-web-login.ps1`，直接启动 GitHub 网页授权，并等待用户在浏览器完成登录。
 4. 登录成功后重新验证 GitHub 账号，不得要求用户在聊天中发送密码、验证码或 Token。
 5. 定位笔记库，向用户明确显示将上传的本地路径、GitHub 账号、仓库名和 `PRIVATE` 可见性。
-6. 获得上传授权后运行 `scripts/publish-vault.ps1 -ConfirmUpload`，初始化 Git、创建或连接私有仓库并完成首次推送。
+6. 获得上传授权后运行 `scripts/publish-vault.ps1 -ConfirmUpload`，初始化 Git、创建或连接私有仓库并完成首次推送。用户已有仓库时，优先接收完整 GitHub 仓库 URL，使用 `-RepositoryUrl` 和 `-OpenRepositoryPage`，不要反复要求用户拆分 owner、仓库名和 `.git` 地址。
 7. 验证 GitHub 仓库为私有、本地与远端哈希一致，运行 `scripts/configure-windows-obsidian-git.ps1` 关闭 Windows 插件自动任务和普通通知，再安装 Windows 事件同步。
 8. 运行无侵入检查；获得测试文件上传授权后运行事件探针。
 9. 请用户在 Windows Obsidian 新建或编辑测试笔记，并确认 GitHub 页面出现改动。用户未确认前，不得声称桌面连接成功。
@@ -165,7 +165,7 @@ When the user asks to configure Obsidian and GitHub, follow this exact order:
 3. Check `gh auth status`. If unauthenticated, run `scripts/github-web-login.ps1` to launch GitHub web authorization and wait for the user to finish in the browser.
 4. Revalidate the GitHub account. Never ask the user to send a password, verification code, or token in chat.
 5. Locate the vault and show the exact local path, GitHub account, repository name, and `PRIVATE` visibility.
-6. After upload authorization, run `scripts/publish-vault.ps1 -ConfirmUpload` to initialize Git, create or connect the private repository, and perform the first push.
+6. After upload authorization, run `scripts/publish-vault.ps1 -ConfirmUpload` to initialize Git, create or connect the private repository, and perform the first push. When the user already has a repository, prefer the complete GitHub repository URL with `-RepositoryUrl` and `-OpenRepositoryPage`; do not repeatedly ask the user to split owner, repository name, and `.git` URL.
 7. Verify private visibility and matching hashes, run `scripts/configure-windows-obsidian-git.ps1` to disable Windows plugin automatics and ordinary notices, then install Windows event synchronization.
 8. Run the noninvasive check and run the event probe only after authorization to upload temporary test files.
 9. Ask the user to create or edit a test note in Windows Obsidian and confirm that GitHub shows the change. Do not claim desktop success before confirmation.
