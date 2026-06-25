@@ -192,10 +192,10 @@ Before acting, show:
 
 Before creating anything, ask the user one direct question: do they already have the private GitHub repository that should become the Obsidian vault source?
 
-- If yes, ask for the full GitHub repository URL. Prefer the URL over separate owner and repository-name fields.
-- If this is a new PC or an empty target folder, clone the existing private repository and open the cloned folder as the Obsidian vault. Do not initialize a new repository and push to the same remote.
-- If the user has existing local notes that must be connected to that repository, inspect both local and remote histories and reconcile them first. Never force-push over the remote.
-- If no, ask for the desired repository name, then create a new private GitHub repository under the authenticated account.
+- If no repository exists and the local vault has notes, ask for the desired repository name, create a new private GitHub repository under the authenticated account, then upload the local notes.
+- If no repository exists and the local target is empty, ask for the desired repository name, create a new private GitHub repository, then use it as the sync destination.
+- If a repository already exists and this is a new PC or empty target folder, ask for the full GitHub repository URL, clone it, and open the cloned folder as the Obsidian vault.
+- If a repository already exists and the local vault also has notes, ask for the full GitHub repository URL, inspect both histories, create a local backup branch, and merge local and remote content. If conflicts appear, stop with the conflict files intact and resolve them; never force-push over the remote.
 
 After the user authorizes uploading the exact local path to the confirmed private repository, run:
 
@@ -209,6 +209,8 @@ powershell -ExecutionPolicy Bypass -File scripts/publish-vault.ps1 `
 
 Prefer a complete GitHub repository URL instead of asking the user to split owner and repository names repeatedly. The script parses owner and repository from the URL and opens the GitHub repository page or new repository page so the user can confirm the intended private repository. If the user does not already have a repository, use `-RepositoryName "<repository-name>"` to create one under the authenticated GitHub account.
 
+When connecting local notes to an existing repository, the script creates a `backup-before-remote-merge-...` branch before merging. If the histories diverge and Git can merge cleanly, it commits the merge and continues to push. If conflicts occur, the script stops and reports the backup branch; resolve conflicts manually, commit, and push. Force push remains disabled.
+
 The script:
 
 1. Verifies the authenticated GitHub account.
@@ -219,11 +221,12 @@ The script:
 6. removes Git plugin `data.json` from version control while preserving it locally;
 7. configures a repository-local author with a GitHub noreply email;
 8. creates a `PRIVATE` repository or safely connects the matching private repository;
-9. refuses a different existing remote or unrelated history;
-10. commits and performs the first push;
-11. verifies visibility and matching hashes.
+9. refuses a different existing remote;
+10. safely merges matching existing remote history when needed;
+11. commits and performs the first push;
+12. verifies visibility and matching hashes.
 
-If the remote has unrelated history, stop and reconcile it. Never force-overwrite it.
+If the remote has unrelated history and Git cannot merge it cleanly, stop and reconcile conflicts. Never force-overwrite it.
 
 ### 5. Install event synchronization
 

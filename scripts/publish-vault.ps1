@@ -141,6 +141,9 @@ $fetchExitCode = $LASTEXITCODE
 $ErrorActionPreference = $savedErrorPreference
 $remoteBranchExists = ($fetchExitCode -eq 0)
 if ($remoteBranchExists) {
+    $backupBranch = "backup-before-remote-merge-" + (Get-Date -Format "yyyyMMdd-HHmmss")
+    & $GitExe -C $VaultPath branch $backupBranch *> $null
+
     & $GitExe -C $VaultPath merge-base --is-ancestor "origin/$Branch" HEAD
     if ($LASTEXITCODE -ne 0) {
         & $GitExe -C $VaultPath merge-base --is-ancestor HEAD "origin/$Branch"
@@ -148,7 +151,10 @@ if ($remoteBranchExists) {
             & $GitExe -C $VaultPath pull --rebase origin $Branch
             if ($LASTEXITCODE -ne 0) { throw "Unable to rebase onto the existing remote branch." }
         } else {
-            throw "Local and remote histories diverge. Resolve them manually; force push is disabled."
+            & $GitExe -C $VaultPath merge --no-edit --allow-unrelated-histories "origin/$Branch"
+            if ($LASTEXITCODE -ne 0) {
+                throw "Local and remote histories diverged and the safe merge stopped with conflicts. A local backup branch was created: $backupBranch. Resolve conflicts, commit the merge, then push. Force push is disabled."
+            }
         }
     }
 }
