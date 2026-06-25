@@ -41,7 +41,7 @@ if ($WatcherPath) {
     $watcherRunning = ($processes.Count -gt 0)
 }
 
-if ($task.State -ne "Running" -or ($WatcherPath -and -not $watcherRunning)) {
+if (($WatcherPath -and -not $watcherRunning) -or (-not $WatcherPath -and $task.State -ne "Running")) {
     Start-ScheduledTask -TaskName $TaskName
     Start-Sleep -Seconds 2
     $state = (Get-ScheduledTask -TaskName $TaskName).State.ToString()

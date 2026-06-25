@@ -51,7 +51,7 @@
 
 ## Windows 周期性弹出 CLI 窗口
 
-检查 `Obsidian Git Sync Watchdog ...` 计划任务的 `Execute` 字段。新版安装器应让 watchdog 使用 `wscript.exe`，避免每分钟检查时弹窗；主同步任务可以直接使用 `powershell.exe`，因为它是长期任务，不会每分钟启动。若 watchdog 仍显示 `powershell.exe`，重新运行 `scripts/install-windows-event-sync.ps1`。
+检查 `Obsidian Git Event Sync ...` 和 `Obsidian Git Sync Watchdog ...` 计划任务的 `Execute` 字段。新版安装器应让两个任务都使用 `wscript.exe`，避免开机登录和每分钟检查时弹窗。若任意一个仍显示 `powershell.exe`，重新运行 `scripts/install-windows-event-sync.ps1`。
 
 ## Windows 右上角持续出现 Pull 或 Push 弹窗
 
@@ -128,7 +128,7 @@ Run `scripts/install-windows-event-sync.ps1` again. The installer removes batter
 
 ## Windows periodically flashes a CLI window
 
-Inspect the `Obsidian Git Sync Watchdog ...` scheduled task `Execute` field. The current installer should run the watchdog through `wscript.exe` to avoid a visible window every minute. The main sync task may use direct `powershell.exe` because it is long-lived and does not launch every minute. If the watchdog still shows `powershell.exe`, rerun `scripts/install-windows-event-sync.ps1`.
+Inspect the `Execute` field for both `Obsidian Git Event Sync ...` and `Obsidian Git Sync Watchdog ...`. The current installer should run both tasks through `wscript.exe` to avoid visible windows at logon and during periodic checks. If either still shows `powershell.exe`, rerun `scripts/install-windows-event-sync.ps1`.
 
 ## Windows repeatedly shows Pull or Push notices
 

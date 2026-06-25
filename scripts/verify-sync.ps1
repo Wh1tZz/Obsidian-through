@@ -107,9 +107,10 @@ $remoteHash = Get-RemoteHash
 $status = @(Invoke-Git status --porcelain --untracked-files=all)
 $tasks = @(Get-ScheduledTask -TaskName "Obsidian Git Event Sync *" -ErrorAction SilentlyContinue)
 $watchdogTasks = @(Get-ScheduledTask -TaskName "Obsidian Git Sync Watchdog *" -ErrorAction SilentlyContinue)
+$expectedWatcherPath = Join-Path (Join-Path $env:LOCALAPPDATA "ObsidianGitSync") "watch-vault.ps1"
 $watcherProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue | Where-Object {
     $_.CommandLine -and
-    $_.CommandLine -like "*-File*watch-vault.ps1*" -and
+    $_.CommandLine -like "*-File*$expectedWatcherPath*" -and
     $_.CommandLine -like "*$VaultPath*"
 })
 

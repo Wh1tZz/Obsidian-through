@@ -45,7 +45,7 @@ $watchdogLogPath = Join-Path $InstallRoot "watchdog-$($vaultHash.Substring(0, 8)
 $arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$installedWatcher`" -VaultPath `"$VaultPath`" -GitExe `"$GitExe`" -DebounceSeconds $DebounceSeconds -PullIntervalSeconds $PullIntervalSeconds -Remote `"$Remote`" -Branch `"$Branch`" -LogPath `"$logPath`""
 $watchdogArguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$installedWatchdog`" -TaskName `"$taskName`" -WatcherPath `"$installedWatcher`" -VaultPath `"$VaultPath`" -LogPath `"$watchdogLogPath`""
 
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $arguments
+$action = New-ScheduledTaskAction -Execute "wscript.exe" -Argument "`"$installedLauncher`" `"powershell.exe`" $arguments"
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew -StartWhenAvailable -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description "Sync an Obsidian vault after file edit events." -Force | Out-Null
