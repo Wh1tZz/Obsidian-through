@@ -238,7 +238,28 @@ powershell -ExecutionPolicy Bypass -File scripts/configure-windows-obsidian-git.
   -VaultPath "C:\path\to\vault"
 ```
 
-It sets `Auto commit-and-sync interval = 0`, `Auto pull interval = 0`, Pull on startup on, sync-after-edit off, and Disable notifications on while preserving unrelated plugin options. Keep plugin `data.json` device-local and reload Obsidian afterward.
+Default desktop mode is `EventWatcher`. In this mode, the Windows watcher owns automatic sync and the Obsidian Git plugin is kept for startup pull, history, and manual commands. The script sets:
+
+- `Split timers for automatic commit and sync` off
+- `Auto commit-and-sync interval (minutes)` to `0`
+- `Auto commit-and-sync after stopping file edits` off
+- `Pull on startup` on
+- `Auto pull interval` to `0`
+- ordinary notifications off, while keeping error notices on
+
+Do not also enable the plugin's 1-minute automatic commit/pull while the Windows watcher is installed. Two automatic sync engines can race for the Git index, create duplicate commits, surface repeated notices, or increase rename/delete conflicts across multiple PCs.
+
+Use plugin timer mode only when the Windows watcher is not installed or the user explicitly wants Obsidian Git itself to own desktop automation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/configure-windows-obsidian-git.ps1 `
+  -VaultPath "C:\path\to\vault" `
+  -Mode PluginTimer
+```
+
+Plugin timer mode sets `Auto commit-and-sync interval (minutes) = 1`, `Auto commit-and-sync after stopping file edits` on, `Split timers for automatic commit and sync` off, `Pull on startup` on, and `Auto pull interval = 1`.
+
+Keep plugin `data.json` device-local and reload Obsidian after either mode.
 
 ### 6. Automated verification
 

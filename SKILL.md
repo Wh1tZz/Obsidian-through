@@ -224,6 +224,8 @@ The installer also registers an `Obsidian Git Sync Watchdog ...` task. Both the 
 
 Disable Obsidian Git automatic commit, periodic automatic pull, and ordinary notices on Windows, but enable `Pull on startup` so every Obsidian launch pulls once immediately. The plugin may remain installed for history and manual commands.
 
+Configure only one desktop automation engine per Windows machine. If the bundled Windows event watcher is installed, run `scripts/configure-windows-obsidian-git.ps1` in its default `EventWatcher` mode and keep the plugin's 1-minute automatic commit/pull timers disabled. Enabling both the watcher and plugin timers can race for the Git index, create duplicate commits, show repeated notices, and increase conflict risk across two or more PCs. Use `-Mode PluginTimer` only when the Windows watcher is not installed or the user explicitly chooses Obsidian Git's built-in timers instead of the watcher.
+
 ### 4. Verify Windows end to end
 
 Run a noninvasive check first:

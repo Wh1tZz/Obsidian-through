@@ -1,7 +1,10 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [string]$VaultPath
+    [string]$VaultPath,
+
+    [ValidateSet("EventWatcher", "PluginTimer")]
+    [string]$Mode = "EventWatcher"
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,15 +20,28 @@ if (Test-Path -LiteralPath $dataPath) {
     $settings = [pscustomobject]@{}
 }
 
-$required = [ordered]@{
-    autoSaveInterval = 0
-    autoPushInterval = 0
-    autoPullInterval = 0
-    autoPullOnBoot = $true
-    autoBackupAfterFileChange = $false
-    differentIntervalCommitAndPush = $false
-    disablePopups = $true
-    showErrorNotices = $true
+if ($Mode -eq "EventWatcher") {
+    $required = [ordered]@{
+        autoSaveInterval = 0
+        autoPushInterval = 0
+        autoPullInterval = 0
+        autoPullOnBoot = $true
+        autoBackupAfterFileChange = $false
+        differentIntervalCommitAndPush = $false
+        disablePopups = $true
+        showErrorNotices = $true
+    }
+} else {
+    $required = [ordered]@{
+        autoSaveInterval = 1
+        autoPushInterval = 0
+        autoPullInterval = 1
+        autoPullOnBoot = $true
+        autoBackupAfterFileChange = $true
+        differentIntervalCommitAndPush = $false
+        disablePopups = $false
+        showErrorNotices = $true
+    }
 }
 
 foreach ($entry in $required.GetEnumerator()) {
@@ -42,9 +58,14 @@ $json = $settings | ConvertTo-Json -Depth 20
 [pscustomobject]@{
     vaultPath = $VaultPath
     dataPath = $dataPath
-    autoCommitAndSync = $false
-    autoPull = $false
+    mode = $Mode
+    autoCommitAndSync = ($Mode -eq "PluginTimer")
+    autoCommitAndSyncIntervalMinutes = $settings.autoSaveInterval
+    autoPull = ($Mode -eq "PluginTimer")
+    autoPullIntervalMinutes = $settings.autoPullInterval
     pullOnStartup = $true
-    notifications = $false
+    syncAfterStoppingFileEdits = $settings.autoBackupAfterFileChange
+    splitTimers = $settings.differentIntervalCommitAndPush
+    notifications = -not $settings.disablePopups
     reloadObsidianRequired = $true
 } | ConvertTo-Json
