@@ -39,7 +39,7 @@
 ## Windows 事件同步漏掉改动
 
 - 确认计划任务存在。
-- 确认 `Obsidian Git Event Sync ...` 主任务为 `Running`；若不是，确认 `Obsidian Git Sync Watchdog ...` 存在并会重新拉起它。
+- 确认 `Obsidian Git Event Sync ...` 为 `Running`，且 `verify-sync.ps1` 输出的 `watcherProcesses` 至少包含一个后台监听进程；若没有，确认 `Obsidian Git Sync Watchdog ...` 存在并会重新拉起它。
 - 确认日志包含 `watcher started`。
 - 使用 Skill 附带的事件队列监听器；阻塞式监听器可能在 Git 推送时漏掉事件。
 - 忽略 `.git` 事件，避免循环触发。
@@ -47,7 +47,11 @@
 
 ## Windows 主同步任务停止在 Ready
 
-重新运行 `scripts/install-windows-event-sync.ps1`。安装器会为主任务启用失败自动重启、取消电池停止限制，并注册每分钟运行一次的 watchdog。验证时主任务应为 `Running`，watchdog 通常为 `Ready`；watchdog 日志出现 `started target task` 表示它已经自动恢复过主任务。
+重新运行 `scripts/install-windows-event-sync.ps1`。安装器会取消电池停止限制，并注册每分钟运行一次的 watchdog。主同步任务应恢复为 `Running`；验证时同时检查 `watcherProcesses` 是否存在后台监听进程。watchdog 日志出现 `started target task` 表示它已经自动恢复过监听进程。
+
+## Windows 周期性弹出 CLI 窗口
+
+检查 `Obsidian Git Sync Watchdog ...` 计划任务的 `Execute` 字段。新版安装器应让 watchdog 使用 `wscript.exe`，避免每分钟检查时弹窗；主同步任务可以直接使用 `powershell.exe`，因为它是长期任务，不会每分钟启动。若 watchdog 仍显示 `powershell.exe`，重新运行 `scripts/install-windows-event-sync.ps1`。
 
 ## Windows 右上角持续出现 Pull 或 Push 弹窗
 
@@ -112,7 +116,7 @@ Pull before editing, open the existing note from the file list, and edit its bod
 ## Windows event sync misses changes
 
 - Confirm the scheduled task exists.
-- Confirm the main `Obsidian Git Event Sync ...` task is `Running`; if not, confirm the `Obsidian Git Sync Watchdog ...` task exists and restarts it.
+- Confirm `Obsidian Git Event Sync ...` is `Running`, and confirm `watcherProcesses` from `verify-sync.ps1` contains at least one background watcher process. If not, confirm the `Obsidian Git Sync Watchdog ...` task exists and restarts it.
 - Confirm the log reports `watcher started`.
 - Use the bundled event-queue watcher; blocking watchers can miss events during Git push.
 - Ignore `.git` events to prevent loops.
@@ -120,7 +124,11 @@ Pull before editing, open the existing note from the file list, and edit its bod
 
 ## Windows main sync task is stuck in Ready
 
-Run `scripts/install-windows-event-sync.ps1` again. The installer enables restart-on-failure for the main task, removes battery-stop restrictions, and registers a watchdog that runs every minute. During verification, the main task should be `Running` and the watchdog usually appears as `Ready`; `started target task` in the watchdog log means it has automatically recovered the main task.
+Run `scripts/install-windows-event-sync.ps1` again. The installer removes battery-stop restrictions and registers a watchdog that runs every minute. The main sync task should return to `Running`; during verification, also confirm `watcherProcesses` contains a background watcher process. `started target task` in the watchdog log means it has automatically recovered the watcher.
+
+## Windows periodically flashes a CLI window
+
+Inspect the `Obsidian Git Sync Watchdog ...` scheduled task `Execute` field. The current installer should run the watchdog through `wscript.exe` to avoid a visible window every minute. The main sync task may use direct `powershell.exe` because it is long-lived and does not launch every minute. If the watchdog still shows `powershell.exe`, rerun `scripts/install-windows-event-sync.ps1`.
 
 ## Windows repeatedly shows Pull or Push notices
 

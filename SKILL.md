@@ -77,7 +77,7 @@ powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 
 
 安装器会注册当前用户登录自启任务并立即启动。本地提交和推送只由文件事件触发；隐藏任务在工作区干净时每 60 秒静默拉取手机更新，不会调用 Obsidian 通知。
 
-安装器同时注册 `Obsidian Git Sync Watchdog ...` 守护任务。守护任务每分钟检查主事件同步任务，若主任务因睡眠、电池、系统中断或异常退出而停在 `Ready`，会自动重新启动。主任务应长期为 `Running`；守护任务是短任务，通常显示 `Ready` 属于正常状态。
+安装器同时注册 `Obsidian Git Sync Watchdog ...` 守护任务。主任务由 Task Scheduler 直接托管并应保持 `Running`；守护任务每分钟检查主任务和真实的 `watch-vault.ps1` 进程，若主监听因睡眠、电池、系统中断或异常退出而停止，会自动重新启动。周期性 watchdog 通过 `wscript.exe` 和 `run-hidden.vbs` 隐藏启动 PowerShell，避免桌面反复弹出 CLI 窗口。
 
 关闭 Windows Obsidian Git 插件的自动提交、周期自动拉取和普通通知，但开启 `Pull on startup`，确保每次打开 Obsidian 立即拉取一次。插件可保留用于历史记录和手动命令。
 
@@ -99,8 +99,8 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 `
 只有满足以下全部条件才能宣布成功：
 
 - GitHub CLI 可验证时，仓库必须为私有。
-- 监听任务存在，状态为运行中或就绪。
-- 守护任务存在；主监听任务若被停止，守护任务能够重新拉起。
+- 监听任务和守护任务存在。
+- 主监听任务为 `Running`，且 `watcherProcesses` 至少包含一个后台监听进程；若监听进程被停止，守护任务能够重新拉起。
 - 创建和删除事件无需手动 Git 命令即可提交并推送。
 - 工作区干净。
 - 本地与远端哈希一致。
@@ -218,7 +218,7 @@ powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 
 
 The installer registers a per-user logon task and starts it immediately. Local commits and pushes occur only after file events; a hidden clean-worktree pull checks for phone updates every 60 seconds without using Obsidian notices.
 
-The installer also registers an `Obsidian Git Sync Watchdog ...` task. The watchdog checks the main event sync task every minute and restarts it if sleep, battery transitions, system interruption, or an abnormal exit leaves it in `Ready`. The main task should stay `Running`; the watchdog is a short task and normally appears as `Ready`.
+The installer also registers an `Obsidian Git Sync Watchdog ...` task. The main task is hosted directly by Task Scheduler and should stay `Running`; the watchdog checks the main task and the real `watch-vault.ps1` process every minute and restarts it after sleep, battery transitions, system interruption, or abnormal exit. The periodic watchdog launches PowerShell through `wscript.exe` and `run-hidden.vbs` so it does not repeatedly flash CLI windows.
 
 Disable Obsidian Git automatic commit, periodic automatic pull, and ordinary notices on Windows, but enable `Pull on startup` so every Obsidian launch pulls once immediately. The plugin may remain installed for history and manual commands.
 
@@ -240,8 +240,8 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 `
 Require every check before claiming success:
 
 - Repository visibility is private when GitHub CLI can verify it.
-- Watcher task exists and is running or ready.
-- Watchdog task exists; if the watcher is stopped, the watchdog can restart it.
+- Watcher and watchdog tasks exist.
+- The main watcher task is `Running`, and `watcherProcesses` contains at least one background watcher process; if it is stopped, the watchdog can restart it.
 - Create and delete events commit and push without manual Git commands.
 - Worktree is clean.
 - Local and remote hashes match.

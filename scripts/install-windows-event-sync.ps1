@@ -30,8 +30,10 @@ if (-not $InstallRoot) {
 New-Item -ItemType Directory -Path $InstallRoot -Force | Out-Null
 $installedWatcher = Join-Path $InstallRoot "watch-vault.ps1"
 $installedWatchdog = Join-Path $InstallRoot "watchdog-task.ps1"
+$installedLauncher = Join-Path $InstallRoot "run-hidden.vbs"
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot "watch-vault.ps1") -Destination $installedWatcher -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot "watchdog-task.ps1") -Destination $installedWatchdog -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot "run-hidden.vbs") -Destination $installedLauncher -Force
 
 $sha = [System.Security.Cryptography.SHA256]::Create()
 $hashBytes = $sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($VaultPath.ToLowerInvariant()))
@@ -41,14 +43,14 @@ $watchdogTaskName = "Obsidian Git Sync Watchdog $($vaultHash.Substring(0, 8))"
 $logPath = Join-Path $InstallRoot "sync-$($vaultHash.Substring(0, 8)).log"
 $watchdogLogPath = Join-Path $InstallRoot "watchdog-$($vaultHash.Substring(0, 8)).log"
 $arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$installedWatcher`" -VaultPath `"$VaultPath`" -GitExe `"$GitExe`" -DebounceSeconds $DebounceSeconds -PullIntervalSeconds $PullIntervalSeconds -Remote `"$Remote`" -Branch `"$Branch`" -LogPath `"$logPath`""
-$watchdogArguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$installedWatchdog`" -TaskName `"$taskName`" -LogPath `"$watchdogLogPath`""
+$watchdogArguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$installedWatchdog`" -TaskName `"$taskName`" -WatcherPath `"$installedWatcher`" -VaultPath `"$VaultPath`" -LogPath `"$watchdogLogPath`""
 
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $arguments
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew -StartWhenAvailable -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description "Sync an Obsidian vault after file edit events." -Force | Out-Null
 
-$watchdogAction = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $watchdogArguments
+$watchdogAction = New-ScheduledTaskAction -Execute "wscript.exe" -Argument "`"$installedLauncher`" `"powershell.exe`" $watchdogArguments"
 $watchdogLogonTrigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $watchdogIntervalTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 3650)
 $watchdogSettings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 5) -MultipleInstances IgnoreNew -StartWhenAvailable -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
@@ -67,6 +69,7 @@ Start-Sleep -Seconds 2
     gitExe = $GitExe
     watcherPath = $installedWatcher
     watchdogPath = $installedWatchdog
+    launcherPath = $installedLauncher
     logPath = $logPath
     watchdogLogPath = $watchdogLogPath
     debounceSeconds = $DebounceSeconds

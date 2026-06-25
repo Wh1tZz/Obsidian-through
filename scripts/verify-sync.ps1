@@ -70,6 +70,11 @@ $remoteHash = Get-RemoteHash
 $status = @(Invoke-Git status --porcelain --untracked-files=all)
 $tasks = @(Get-ScheduledTask -TaskName "Obsidian Git Event Sync *" -ErrorAction SilentlyContinue)
 $watchdogTasks = @(Get-ScheduledTask -TaskName "Obsidian Git Sync Watchdog *" -ErrorAction SilentlyContinue)
+$watcherProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue | Where-Object {
+    $_.CommandLine -and
+    $_.CommandLine -like "*-File*watch-vault.ps1*" -and
+    $_.CommandLine -like "*$VaultPath*"
+})
 
 $visibility = "unknown"
 $gh = Get-Command gh.exe -ErrorAction SilentlyContinue
@@ -147,6 +152,7 @@ $result = [pscustomobject]@{
     remoteHash = $remoteHash
     watcherTasks = @($tasks | ForEach-Object { [pscustomobject]@{ name = $_.TaskName; state = $_.State.ToString() } })
     watchdogTasks = @($watchdogTasks | ForEach-Object { [pscustomobject]@{ name = $_.TaskName; state = $_.State.ToString() } })
+    watcherProcesses = @($watcherProcesses | ForEach-Object { [pscustomobject]@{ processId = $_.ProcessId; name = $_.Name } })
     eventProbe = $probe
     remotePullProbe = $remotePullProbe
 }

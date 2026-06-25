@@ -2,6 +2,8 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$TaskName,
+    [string]$WatcherPath = "",
+    [string]$VaultPath = "",
     [string]$LogPath = ""
 )
 
@@ -28,7 +30,18 @@ if (-not $task) {
     exit 1
 }
 
-if ($task.State -ne "Running") {
+$watcherRunning = $false
+if ($WatcherPath) {
+    $resolvedWatcherPath = try { (Resolve-Path -LiteralPath $WatcherPath).Path } catch { $WatcherPath }
+    $processes = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue | Where-Object {
+        $_.CommandLine -and
+        $_.CommandLine -like "*-File*$resolvedWatcherPath*" -and
+        (-not $VaultPath -or $_.CommandLine -like "*$VaultPath*")
+    })
+    $watcherRunning = ($processes.Count -gt 0)
+}
+
+if ($task.State -ne "Running" -or ($WatcherPath -and -not $watcherRunning)) {
     Start-ScheduledTask -TaskName $TaskName
     Start-Sleep -Seconds 2
     $state = (Get-ScheduledTask -TaskName $TaskName).State.ToString()
