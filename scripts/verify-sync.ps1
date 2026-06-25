@@ -27,6 +27,23 @@ function Invoke-Git {
     return $output
 }
 
+function Invoke-GitCommand {
+    param(
+        [string]$RepositoryPath,
+        [Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments
+    )
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    try {
+        $output = & $GitExe -C $RepositoryPath @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($exitCode -ne 0) { throw "git $($Arguments -join ' ') failed: $($output -join ' ')" }
+    return $output
+}
+
 function Get-RemoteHash {
     $output = @(& $GitExe -C $VaultPath ls-remote $Remote "refs/heads/$Branch" 2>&1)
     $exitCode = $LASTEXITCODE
@@ -61,6 +78,26 @@ function Wait-ForLocalHash {
         if ($localHash -eq $ExpectedHash -and $status.Count -eq 0) { return $localHash }
     } while ((Get-Date) -lt $deadline)
     throw "The local vault did not receive remote hash $ExpectedHash within $TimeoutSeconds seconds."
+}
+
+function Wait-ForLocalCommit {
+    param([string]$ExpectedHash)
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    do {
+        Start-Sleep -Seconds 2
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = "SilentlyContinue"
+        try {
+            & $GitExe -C $VaultPath merge-base --is-ancestor $ExpectedHash HEAD 2>$null | Out-Null
+            $mergeBaseExitCode = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+        if ($mergeBaseExitCode -eq 0) {
+            return (Invoke-Git rev-parse HEAD | Select-Object -First 1).Trim()
+        }
+    } while ((Get-Date) -lt $deadline)
+    throw "The local vault did not receive remote commit $ExpectedHash within $TimeoutSeconds seconds."
 }
 
 $remoteUrl = (Invoke-Git remote get-url $Remote | Select-Object -First 1).Trim()
@@ -108,30 +145,39 @@ if ($RunRemotePullProbe) {
     $probeRoot = Join-Path $env:TEMP "ObsidianSyncRemoteProbe-$([guid]::NewGuid().ToString('N'))"
     $probeName = ".obsidian-remote-probe-$([guid]::NewGuid().ToString('N')).md"
     try {
-        & $GitExe clone --quiet --branch $Branch --single-branch $remoteUrl $probeRoot 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "Unable to create the remote pull probe clone." }
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = "SilentlyContinue"
+        try {
+            $cloneOutput = & $GitExe clone --quiet --branch $Branch --single-branch $remoteUrl $probeRoot 2>&1
+            $cloneExitCode = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+        if ($cloneExitCode -ne 0) { throw "Unable to create the remote pull probe clone: $($cloneOutput -join ' ')" }
         $name = (Invoke-Git config user.name | Select-Object -First 1).Trim()
         $email = (Invoke-Git config user.email | Select-Object -First 1).Trim()
-        & $GitExe -C $probeRoot config user.name $name
-        & $GitExe -C $probeRoot config user.email $email
+        Invoke-GitCommand -RepositoryPath $probeRoot config user.name $name | Out-Null
+        Invoke-GitCommand -RepositoryPath $probeRoot config user.email $email | Out-Null
         [IO.File]::WriteAllText((Join-Path $probeRoot $probeName), "Remote pull probe $(Get-Date -Format o)`r`n", [Text.UTF8Encoding]::new($false))
-        & $GitExe -C $probeRoot add --all
-        & $GitExe -C $probeRoot commit --quiet -m "Add remote pull probe" 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "Unable to commit the remote pull probe." }
-        & $GitExe -C $probeRoot push --quiet $Remote $Branch 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "Unable to push the remote pull probe." }
+        Invoke-GitCommand -RepositoryPath $probeRoot add --all | Out-Null
+        Invoke-GitCommand -RepositoryPath $probeRoot commit --quiet -m "Add remote pull probe" | Out-Null
+        Invoke-GitCommand -RepositoryPath $probeRoot push --quiet $Remote $Branch | Out-Null
         $createdHash = ((& $GitExe -C $probeRoot rev-parse HEAD) -join "").Trim()
-        [void](Wait-ForLocalHash -ExpectedHash $createdHash)
+        $receivedHash = Wait-ForLocalCommit -ExpectedHash $createdHash
 
-        Remove-Item -LiteralPath (Join-Path $probeRoot $probeName) -Force
-        & $GitExe -C $probeRoot add --all
-        & $GitExe -C $probeRoot commit --quiet -m "Remove remote pull probe" 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "Unable to commit removal of the remote pull probe." }
-        & $GitExe -C $probeRoot push --quiet $Remote $Branch 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "Unable to push removal of the remote pull probe." }
-        $deletedHash = ((& $GitExe -C $probeRoot rev-parse HEAD) -join "").Trim()
-        [void](Wait-ForLocalHash -ExpectedHash $deletedHash)
-        $remotePullProbe = [pscustomobject]@{ createHash = $createdHash; deleteHash = $deletedHash }
+        $localProbePath = Join-Path $VaultPath $probeName
+        if (Test-Path -LiteralPath $localProbePath) {
+            Remove-Item -LiteralPath $localProbePath -Force
+            Invoke-GitCommand -RepositoryPath $VaultPath add -- $probeName | Out-Null
+            & $GitExe -C $VaultPath diff --cached --quiet
+            if ($LASTEXITCODE -ne 0) {
+                Invoke-GitCommand -RepositoryPath $VaultPath commit --quiet -m "Remove remote pull probe" | Out-Null
+            }
+        }
+        Invoke-GitCommand -RepositoryPath $VaultPath pull --rebase $Remote $Branch | Out-Null
+        Invoke-GitCommand -RepositoryPath $VaultPath push --quiet $Remote $Branch | Out-Null
+        $deletedHash = (Invoke-Git rev-parse HEAD | Select-Object -First 1).Trim()
+        $remotePullProbe = [pscustomobject]@{ createHash = $createdHash; receivedHash = $receivedHash; cleanupHash = $deletedHash }
         $localHash = $deletedHash
         $remoteHash = Get-RemoteHash
         $status = @(Invoke-Git status --porcelain --untracked-files=all)

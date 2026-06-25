@@ -108,6 +108,8 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 `
   -VaultPath "C:\笔记库路径" -RunEventProbe -RunRemotePullProbe
 ```
 
+`RunRemotePullProbe` 会从临时 clone 向 GitHub 推送一个测试文件，等待 Windows 后台任务自动拉取到本地，然后从本地仓库提交删除测试文件并推回 GitHub。这样验证 GitHub -> PC 的自动拉取，同时避免远端删除与 Obsidian 本地配置自动提交相撞。
+
 ### 7. 请求用户测试
 
 自动验证通过后，请用户执行：
@@ -230,6 +232,8 @@ After authorization for temporary test files:
 powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 `
   -VaultPath "C:\path\to\vault" -RunEventProbe -RunRemotePullProbe
 ```
+
+`RunRemotePullProbe` pushes a test file to GitHub from a temporary clone, waits for the Windows background task to pull it locally, then removes the test file from the local vault and pushes that cleanup. This verifies GitHub -> PC automatic pull while avoiding a remote deletion racing against Obsidian's local configuration writes.
 
 ### 7. Ask the user to test
 
