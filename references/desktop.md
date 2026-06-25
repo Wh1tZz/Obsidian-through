@@ -190,7 +190,14 @@ Before acting, show:
 
 ### 4. Build the private repository
 
-After the user authorizes uploading the exact local path to the named private repository, run:
+Before creating anything, ask the user one direct question: do they already have the private GitHub repository that should become the Obsidian vault source?
+
+- If yes, ask for the full GitHub repository URL. Prefer the URL over separate owner and repository-name fields.
+- If this is a new PC or an empty target folder, clone the existing private repository and open the cloned folder as the Obsidian vault. Do not initialize a new repository and push to the same remote.
+- If the user has existing local notes that must be connected to that repository, inspect both local and remote histories and reconcile them first. Never force-push over the remote.
+- If no, ask for the desired repository name, then create a new private GitHub repository under the authenticated account.
+
+After the user authorizes uploading the exact local path to the confirmed private repository, run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/publish-vault.ps1 `

@@ -165,7 +165,7 @@ When the user asks to configure Obsidian and GitHub, follow this exact order:
 3. Check `gh auth status`. If unauthenticated, run `scripts/github-web-login.ps1` to launch GitHub web authorization and wait for the user to finish in the browser.
 4. Revalidate the GitHub account. Never ask the user to send a password, verification code, or token in chat.
 5. Locate the vault and show the exact local path, GitHub account, repository name, and `PRIVATE` visibility.
-6. After upload authorization, run `scripts/publish-vault.ps1 -ConfirmUpload` to initialize Git, create or connect the private repository, and perform the first push. When the user already has a repository, prefer the complete GitHub repository URL with `-RepositoryUrl` and `-OpenRepositoryPage`; do not repeatedly ask the user to split owner, repository name, and `.git` URL.
+6. Before creating or connecting a repository, ask whether the user already created the private GitHub repository they want to import into Obsidian. If yes, request the complete repository URL and use that existing private repository; on a new device or empty target folder, clone it instead of creating a new repository. If no, create a new private repository only after the user confirms the repository name. When connecting an existing local vault, run `scripts/publish-vault.ps1 -ConfirmUpload` with `-RepositoryUrl` and `-OpenRepositoryPage`; do not repeatedly ask the user to split owner, repository name, and `.git` URL.
 7. Verify private visibility and matching hashes, run `scripts/configure-windows-obsidian-git.ps1` to disable Windows plugin automatics and ordinary notices, then install Windows event synchronization.
 8. Run the noninvasive check and run the event probe only after authorization to upload temporary test files.
 9. Ask the user to create or edit a test note in Windows Obsidian and confirm that GitHub shows the change. Do not claim desktop success before confirmation.
@@ -183,9 +183,12 @@ When the user asks to configure Obsidian and GitHub, follow this exact order:
 
 ### 2. Create or connect the private repository
 
-1. Initialize branch `main` only when the vault is not already a repository.
-2. Create a private GitHub repository or verify that the existing repository is private.
-3. Add at least these entries to `.gitignore`:
+1. Ask the user whether a target private GitHub repository already exists. Do not guess.
+2. If an existing private repository is provided, verify that the URL is reachable and private. On a new PC, phone, or empty local target folder, clone that repository and open the cloned folder as the Obsidian vault. Do not initialize a new repository and push over it.
+3. If the user has local notes that must be connected to an existing repository, inspect both histories and reconcile them first; never force-push or overwrite unrelated remote history.
+4. If no repository exists, ask for the repository name, then create a new private GitHub repository.
+5. Initialize branch `main` only when creating a new repository from a local vault that is not already a repository.
+6. Add at least these entries to `.gitignore`:
 
 ```gitignore
 .obsidian/workspace.json
@@ -204,8 +207,8 @@ Keep `.obsidian/plugins/obsidian-git/data.json` device-local. Otherwise desktop 
 git rm --cached .obsidian/plugins/obsidian-git/data.json
 ```
 
-4. Commit and push the baseline.
-5. Verify local `HEAD` equals remote `main`.
+7. Commit and push the baseline only after the correct repository path is confirmed.
+8. Verify local `HEAD` equals remote `main`.
 
 ### 3. Configure Windows synchronization
 
