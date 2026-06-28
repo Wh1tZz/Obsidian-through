@@ -228,6 +228,18 @@ Inspect the `Execute` field for both `Obsidian Git Event Sync ...` and `Obsidian
 
 Compare local and remote hashes. Check logs for pull or push errors. Confirm Git Credential Manager can authenticate noninteractively and the branch tracks the intended remote.
 
+## Filename too long on Windows
+
+If the watcher log says `Filename too long` while adding a long clipping title, do not shorten or rename the note first. Enable Git long path support and retry:
+
+```powershell
+git config --global core.longpaths true
+git -C "C:\path\to\vault" config core.longpaths true
+git -C "C:\path\to\vault" add --all
+```
+
+The bundled publish and Windows event-sync scripts set `core.longpaths=true` automatically. This preserves long note filenames when GitHub and the filesystem can store them. This is different from Windows-forbidden characters such as `< > : " / \ | ? *`; those characters must still be avoided or renamed because Windows cannot create those paths.
+
 ## Merge conflict
 
 Stop automatic writers. Preserve both versions, resolve conflicted Markdown files, stage, commit, pull with the repository's merge policy, and push. Never discard a user's note without explicit approval.

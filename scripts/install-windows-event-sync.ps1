@@ -23,6 +23,8 @@ if (-not $GitExe) {
     $GitExe = $command.Source
 }
 $GitExe = (Resolve-Path -LiteralPath $GitExe).Path
+& $GitExe config --global core.longpaths true *> $null
+& $GitExe -C $VaultPath config core.longpaths true *> $null
 
 if (-not $InstallRoot) {
     $InstallRoot = Join-Path $env:LOCALAPPDATA "ObsidianGitSync"

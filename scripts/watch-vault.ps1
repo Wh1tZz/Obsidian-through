@@ -25,6 +25,9 @@ if (-not (Test-Path -LiteralPath (Join-Path $VaultPath ".git"))) {
     throw "Vault is not a Git repository: $VaultPath"
 }
 
+& $GitExe config --global core.longpaths true *> $null
+& $GitExe -C $VaultPath config core.longpaths true *> $null
+
 if (-not $LogPath) {
     $LogPath = Join-Path $env:LOCALAPPDATA "ObsidianGitSync\sync.log"
 }

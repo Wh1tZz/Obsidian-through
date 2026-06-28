@@ -239,6 +239,8 @@ powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 
 
 The task listens for create, modify, rename, and delete events. Fifteen quiet seconds trigger commit, rebase, and push. With no local edits, it does not commit or push; a hidden clean-worktree pull checks for phone updates every 30 seconds.
 
+The installer enables Git long path support with `core.longpaths=true` for both the current vault and the user's global Git config. This lets long clipped note titles be committed without shortening the filename.
+
 Recommended speed settings:
 
 - Normal responsive desktop sync: `-DebounceSeconds 15 -PullIntervalSeconds 30`

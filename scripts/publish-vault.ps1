@@ -71,6 +71,9 @@ if (-not (Test-Path -LiteralPath (Join-Path $VaultPath ".git"))) {
     if ($LASTEXITCODE -ne 0) { throw "Unable to initialize the Git repository." }
 }
 
+& $GitExe config --global core.longpaths true *> $null
+& $GitExe -C $VaultPath config core.longpaths true *> $null
+
 $ignorePath = Join-Path $VaultPath ".gitignore"
 $requiredIgnores = @(
     ".obsidian/workspace.json",
