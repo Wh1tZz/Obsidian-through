@@ -1,5 +1,122 @@
 # 中文版
 
+## 0. 手机端用户输出格式
+
+手机端说明必须像逐步操作清单，而不是只给一个 clone 地址。所有值必须来自 `scripts/mobile-setup-info.ps1` 或等价检查，并用单独代码块输出，方便用户复制。不要把 `你的GitHub用户名`、`<owner>`、`<repository>` 等占位符作为最终用户可复制内容。
+
+开始手机端前，先输出真实动态清单：
+
+```text
+GitHub 账号
+```
+
+```text
+<real login>
+```
+
+```text
+电脑端 Obsidian vault
+```
+
+```text
+<real absolute vault path>
+```
+
+```text
+GitHub 私有仓库页面
+```
+
+```text
+https://github.com/<real owner>/<real repository>
+```
+
+```text
+手机端克隆地址
+```
+
+```text
+https://github.com/<real owner>/<real repository>.git
+```
+
+```text
+提交作者名
+```
+
+```text
+<real author name>
+```
+
+```text
+提交邮箱
+```
+
+```text
+<real noreply or verified email>
+```
+
+然后逐步说明：
+
+1. 在手机打开 Obsidian。
+2. 进入 `设置`，搜索或打开 `Community plugins` / 第三方插件。
+3. 安装并启用 `Git` / `Obsidian Git`。
+4. 回到 Obsidian 主界面，打开命令面板；如果找不到，搜索 `Command palette`。
+5. 在命令面板搜索并点击：
+
+```text
+Git: Clone existing remote repo
+```
+
+6. 当它要求填写仓库地址时，粘贴真实 clone URL：
+
+```text
+https://github.com/<real owner>/<real repository>.git
+```
+
+7. 如果询问 `Branch`，填写：
+
+```text
+main
+```
+
+8. 如果询问：
+
+```text
+Vault Root
+```
+
+解释这是手机里克隆后的 vault 文件夹名，不是 GitHub 地址。若当前流程要求克隆到新 vault，填写一个新空文件夹名；若用户使用的插件版本要求留空克隆到当前根目录，则明确告诉用户留空。不要让用户猜。
+
+9. 如果询问：
+
+```text
+Specify depth of clone
+```
+
+说明优先留空；若界面不允许留空，填写：
+
+```text
+1
+```
+
+并说明不要把 URL、分支名或文件夹名填到 depth。若出现下面错误，重新克隆并修正 depth：
+
+```text
+Invalid depth. Aborting clone.
+```
+
+10. 克隆完成后，完全关闭并重新打开 Obsidian；如果克隆到了新文件夹，要从 vault 管理器打开克隆后的 vault。
+11. 重新打开后，进入命令面板，搜索并执行：
+
+```text
+Git: Pull
+```
+
+12. 手机端新建测试笔记后，搜索并执行：
+
+```text
+Git: Commit-and-sync
+```
+
 ## 1. 必须先输出的用户专属信息
 
 运行 `scripts/mobile-setup-info.ps1` 后，将结果整理成以下可复制清单。必须把占位符替换为真实值：
@@ -253,6 +370,123 @@ Commit-and-sync = 提交手机本地修改、拉取远端更新并推送到 GitH
 ---
 
 # English Version
+
+## 0. Mobile User-Facing Output Format
+
+Mobile instructions must be a click-by-click checklist, not only a clone URL. Every value must come from `scripts/mobile-setup-info.ps1` or an equivalent check and must be placed in its own copy block. Do not present `your GitHub username`, `<owner>`, or `<repository>` placeholders as final user-copyable content.
+
+Before mobile setup, show the real dynamic checklist:
+
+```text
+GitHub account
+```
+
+```text
+<real login>
+```
+
+```text
+Desktop Obsidian vault
+```
+
+```text
+<real absolute vault path>
+```
+
+```text
+GitHub private repository page
+```
+
+```text
+https://github.com/<real owner>/<real repository>
+```
+
+```text
+Mobile clone URL
+```
+
+```text
+https://github.com/<real owner>/<real repository>.git
+```
+
+```text
+Commit author name
+```
+
+```text
+<real author name>
+```
+
+```text
+Commit email
+```
+
+```text
+<real noreply or verified email>
+```
+
+Then guide the user step by step:
+
+1. Open Obsidian on the phone.
+2. Open `Settings`, then search for or open `Community plugins`.
+3. Install and enable `Git` / `Obsidian Git`.
+4. Return to the Obsidian main screen and open Command Palette. If the user cannot find it, search for `Command palette`.
+5. Search and run:
+
+```text
+Git: Clone existing remote repo
+```
+
+6. When asked for the repository URL, paste the real clone URL:
+
+```text
+https://github.com/<real owner>/<real repository>.git
+```
+
+7. If prompted for `Branch`, enter:
+
+```text
+main
+```
+
+8. If prompted for:
+
+```text
+Vault Root
+```
+
+Explain that this is the cloned vault folder name on the phone, not the GitHub URL. If cloning into a new vault folder, enter a new empty folder name. If the plugin version requires blank root for the current vault root, explicitly tell the user to leave it blank. Do not make the user guess.
+
+9. If prompted for:
+
+```text
+Specify depth of clone
+```
+
+Prefer leaving it blank. If the UI does not allow blank input, enter:
+
+```text
+1
+```
+
+Do not enter the URL, branch name, or folder name as depth. If this error appears, restart clone and correct the depth:
+
+```text
+Invalid depth. Aborting clone.
+```
+
+10. After clone, fully close and reopen Obsidian. If it cloned into a new folder, open the cloned folder as the vault from vault manager.
+11. After reopening, search Command Palette and run:
+
+```text
+Git: Pull
+```
+
+12. After creating a mobile test note, search and run:
+
+```text
+Git: Commit-and-sync
+```
 
 ## 1. Personalized information that must be shown first
 

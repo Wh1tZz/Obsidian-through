@@ -1,5 +1,88 @@
 # 中文版
 
+## 0. PC 端用户输出格式
+
+面向用户说话时，不要只说“复制这个地址”或“运行这个命令”。必须把 PC 端每个需要用户核对、复制、粘贴、打开或搜索的值放进单独的代码块，并说明用户应该在什么界面里使用它。
+
+所有代码块中的值必须来自当前运行结果：`setup-windows.ps1`、`publish-vault.ps1`、`verify-sync.ps1`、`gh api user`、`git remote get-url origin` 或等价检查。不要把示例占位符当成最终输出。
+
+GitHub 登录阶段应这样输出：
+
+```text
+接下来我会打开 GitHub 官方授权页面。请只在浏览器里登录，不要把密码、验证码或 Token 发到聊天窗口。
+```
+
+```text
+https://github.com/login/device
+```
+
+如果 GitHub CLI 显示一次性 code，只让用户把 PowerShell 窗口里的 code 填到 GitHub 网页中；不要让用户把 code 发给聊天窗口。
+
+GitHub 登录完成后，应输出真实账号：
+
+```text
+GitHub 登录账号
+```
+
+```text
+<real login from gh api user>
+```
+
+确认 PC vault 时，应输出真实路径，并说明这是 Obsidian 笔记库，不是 Obsidian 软件安装目录：
+
+```text
+电脑端 Obsidian vault 路径
+```
+
+```text
+<real absolute vault path>
+```
+
+确认仓库时，应输出真实仓库地址和可见性：
+
+```text
+GitHub 私有仓库
+```
+
+```text
+https://github.com/<real owner>/<real repository>
+```
+
+```text
+Git remote clone URL
+```
+
+```text
+https://github.com/<real owner>/<real repository>.git
+```
+
+上传前必须自然语言说明：确认后会把上述 vault 连接到上述 private repository；如果本地和远程都有内容，会安全合并并保留冲突，不会 force push。
+
+PC 配置完成后，给用户的测试步骤必须具体到操作位置：
+
+1. 打开 Windows 端 Obsidian。
+2. 在左侧文件列表新建一篇测试笔记。
+3. 文件名建议给出可复制值：
+
+```text
+Windows 同步测试
+```
+
+4. 正文建议给出可复制值：
+
+```text
+这是一条 Windows 到 GitHub 的同步测试。
+```
+
+5. 停止编辑并等待 15 到 30 秒。
+6. 打开实际 GitHub 仓库页面刷新：
+
+```text
+https://github.com/<real owner>/<real repository>
+```
+
+7. 让用户确认是否看到了刚刚的测试笔记。只有用户确认后，才宣布 PC 端成功，并继续手机端配置。
+
 ## 自动登录与桌面配置
 
 ### 1. 检查必需软件
@@ -136,6 +219,89 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 `
 ---
 
 # English Version
+
+## 0. PC User-Facing Output Format
+
+When speaking to the user, do not only say "copy this URL" or "run this command." Every PC-side value the user must verify, copy, paste, open, or search must appear in its own fenced code block, with natural-language instructions explaining where to use it.
+
+Every value in a copy block must come from the current run: `setup-windows.ps1`, `publish-vault.ps1`, `verify-sync.ps1`, `gh api user`, `git remote get-url origin`, or an equivalent check. Do not present example placeholders as final instructions.
+
+For GitHub login, output:
+
+```text
+I will open the official GitHub authorization page. Sign in only in the browser. Do not send your password, verification code, or token in chat.
+```
+
+```text
+https://github.com/login/device
+```
+
+If GitHub CLI shows a one-time code, tell the user to enter the code from the PowerShell window into the GitHub webpage. Do not ask them to send the code in chat.
+
+After login, show the real account:
+
+```text
+GitHub login
+```
+
+```text
+<real login from gh api user>
+```
+
+When confirming the PC vault, show the real path and explain that it is the Obsidian vault, not the Obsidian application install folder:
+
+```text
+Desktop Obsidian vault path
+```
+
+```text
+<real absolute vault path>
+```
+
+When confirming the repository, show the real repository URL and visibility:
+
+```text
+GitHub private repository
+```
+
+```text
+https://github.com/<real owner>/<real repository>
+```
+
+```text
+Git remote clone URL
+```
+
+```text
+https://github.com/<real owner>/<real repository>.git
+```
+
+Before upload, explain that confirmation connects the shown vault to the shown private repository. If both local and remote sides contain content, the workflow will merge safely, preserve conflicts, and never force-push.
+
+After PC setup, the Windows Obsidian test must include exact UI actions:
+
+1. Open Windows Obsidian.
+2. Create a test note from the left file list.
+3. Provide a copyable filename:
+
+```text
+Windows Sync Test
+```
+
+4. Provide copyable body text:
+
+```text
+This is a Windows to GitHub sync test.
+```
+
+5. Stop editing and wait 15 to 30 seconds.
+6. Open and refresh the actual GitHub repository page:
+
+```text
+https://github.com/<real owner>/<real repository>
+```
+
+7. Ask the user to confirm whether the test note appears. Only after user confirmation may you claim PC success and move to mobile setup.
 
 ## Automatic login and desktop configuration
 
