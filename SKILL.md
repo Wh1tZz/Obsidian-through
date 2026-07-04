@@ -17,6 +17,8 @@ description: Configure, repair, explain, and verify private Obsidian synchroniza
 
 当用户说“帮我配置 Obsidian 和 GitHub”或同义请求时，必须按以下顺序执行：
 
+优先使用 `scripts/setup-windows.ps1` 完成 PC 端傻瓜式配置。默认入口 `npx obsidian-through` 应等价于 Windows 一键向导：检查 Git/GitHub CLI、打开 GitHub 网页登录、识别或询问 Obsidian vault、基于用户当前 GitHub 登录生成默认私有仓库地址、创建或连接私有仓库、上传或安全合并本地笔记、配置 Windows 事件监听同步、最后运行验证。上传前必须展示 vault 路径、目标 GitHub 仓库和 `PRIVATE` 要求，并获得用户确认；不得静默上传笔记。
+
 1. 阅读 [references/desktop.md](references/desktop.md) 中文版。
 2. 运行 `scripts/ensure-git-tools.ps1` 检查 Git 和 GitHub CLI。缺失时先向用户确认安装，再使用 `-InstallIfMissing` 安装并复查版本。
 3. 检查 `gh auth status`。未登录时运行 `scripts/github-web-login.ps1`，直接启动 GitHub 网页授权，并等待用户在浏览器完成登录。
@@ -159,6 +161,8 @@ Treat the user's private GitHub vault repository as the source of truth. The ski
 ### Interactive configuration protocol
 
 When the user asks to configure Obsidian and GitHub, follow this exact order:
+
+Prefer `scripts/setup-windows.ps1` for one-click PC setup. The default `npx obsidian-through` entry must behave as the Windows setup wizard: check Git/GitHub CLI, open GitHub web login, detect or ask for the Obsidian vault, build the default private repository URL from the current GitHub login, create or connect the private repository, upload or safely merge local notes, configure Windows event synchronization, and run verification. Before upload, show the vault path, target GitHub repository, and `PRIVATE` requirement, then obtain user confirmation. Never silently upload notes.
 
 1. Read the English section in [references/desktop.md](references/desktop.md).
 2. Run `scripts/ensure-git-tools.ps1` to check Git and GitHub CLI. If either is missing, obtain installation approval, run it with `-InstallIfMissing`, and recheck versions.

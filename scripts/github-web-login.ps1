@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$GhExe = "",
-    [string]$Proxy = ""
+    [string]$Proxy = "",
+    [switch]$QuietOutput
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,4 +33,4 @@ if ($LASTEXITCODE -ne 0) { throw "Unable to configure Git credentials through Gi
 
 $accountJson = & $GhExe api user --jq '{login: .login, id: .id, name: .name}'
 if ($LASTEXITCODE -ne 0) { throw "Unable to verify the authenticated GitHub account." }
-$accountJson
+if (-not $QuietOutput) { $accountJson }

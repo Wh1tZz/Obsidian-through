@@ -9,6 +9,8 @@ function printUsage() {
   console.log(`Obsidian-through
 
 Usage:
+  npx obsidian-through
+  npx obsidian-through setup [--vault <path>] [--repo <github-url-or-owner/name>] [--yes] [--open]
   npx obsidian-through help
   npx obsidian-through login [--proxy http://127.0.0.1:7890]
   npx obsidian-through publish --vault <path> --repo <github-url-or-owner/name> [--open]
@@ -16,6 +18,8 @@ Usage:
   npx obsidian-through mobile-info --vault <path> [--open-token-page]
 
 Examples:
+  npx obsidian-through
+  npx obsidian-through setup --vault "<vault-path>" --repo owner/private-vault --open
   npx obsidian-through login
   npx obsidian-through publish --vault "<vault-path>" --repo https://github.com/owner/private-vault.git --open
   npx obsidian-through verify --vault "<vault-path>"
@@ -48,19 +52,45 @@ function ps(script, scriptArgs) {
 
 function normalizeRepo(repo) {
   if (!repo) return "";
-  if (/^https:\/\/github\.com\/[^/]+\/[^/]+\/?$/.test(repo)) return repo;
-  if (/^https:\/\/github\.com\/[^/]+\/[^/]+\.git\/?$/.test(repo)) return repo;
+  if (/^https:\/\/github\.com\/[^/]+\/[^/]+\.git\/?$/.test(repo)) return repo.replace(/\/$/, "");
+  if (/^https:\/\/github\.com\/[^/]+\/[^/]+\/?$/.test(repo)) return `${repo.replace(/\/$/, "")}.git`;
   if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) return `https://github.com/${repo}.git`;
   return repo;
 }
 
 const args = process.argv.slice(2);
-const command = args[0] || "help";
-const rest = args.slice(1);
+let command = args[0] || "setup";
+let rest = args.slice(1);
+if (args[0] && args[0].startsWith("-") && args[0] !== "--help" && args[0] !== "-h") {
+  command = "setup";
+  rest = args;
+}
 
 if (command === "help" || command === "--help" || command === "-h") {
   printUsage();
   process.exit(0);
+}
+
+if (command === "setup") {
+  if (hasFlag(rest, "--help") || hasFlag(rest, "-h")) {
+    printUsage();
+    process.exit(0);
+  }
+  const vault = valueAfter(rest, "--vault");
+  const repo = normalizeRepo(valueAfter(rest, "--repo"));
+  const proxy = valueAfter(rest, "--proxy");
+  const debounce = valueAfter(rest, "--debounce-seconds");
+  const pullInterval = valueAfter(rest, "--pull-interval-seconds");
+  const psArgs = [];
+  if (vault) psArgs.push("-VaultPath", vault);
+  if (repo) psArgs.push("-RepositoryUrl", repo);
+  if (proxy) psArgs.push("-Proxy", proxy);
+  if (debounce) psArgs.push("-DebounceSeconds", debounce);
+  if (pullInterval) psArgs.push("-PullIntervalSeconds", pullInterval);
+  if (hasFlag(rest, "--install-if-missing")) psArgs.push("-InstallIfMissing");
+  if (hasFlag(rest, "--open")) psArgs.push("-OpenRepositoryPage");
+  if (hasFlag(rest, "--yes") || hasFlag(rest, "-y")) psArgs.push("-Yes");
+  ps("setup-windows.ps1", psArgs);
 }
 
 if (command === "login") {
