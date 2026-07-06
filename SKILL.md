@@ -19,9 +19,9 @@ description: Configure, repair, explain, and verify private Obsidian synchroniza
 
 优先使用 `scripts/setup-windows.ps1` 完成 PC 端傻瓜式配置。默认入口 `npx obsidian-through` 应等价于 Windows 一键自动向导：自动检查并安装缺失的 Git/GitHub CLI、直接打开 GitHub 网页登录、获取当前 GitHub 账号、自动识别 Obsidian vault、基于当前 GitHub 登录生成默认私有仓库地址、创建或连接私有仓库、上传或安全合并本地笔记、配置 Windows 事件监听同步、最后运行验证。不要在 PC 端预先询问无意义配置项；只有自动定位不到 vault、GitHub 登录失败、远程冲突需要人工处理或用户明确提供现有仓库时才停下来要求输入。
 
-面向用户输出时，PC 端和手机端都必须使用“自然语言步骤 + 可复制代码块”的格式。所有需要用户复制、核对、粘贴或搜索的值都要单独放进 fenced code block，并使用脚本或 GitHub API 得到的真实动态值，例如 GitHub 登录名、vault 绝对路径、实际 private repository URL、clone URL、author name、author email、GitHub token 页面、Obsidian 命令名和插件字段名。不要把 `<owner>`、`你的GitHub用户名`、`C:\path\to\vault` 等示例占位符作为最终用户输出。每一步必须说明：在哪里打开、搜索哪个命令、复制哪一段、哪个输入框留空、哪个输入框填写、看到什么算成功、出现已知错误时如何继续。PC 端完成后，必须用同样细节指导用户做 Windows Obsidian 测试，再进入手机端。
+面向用户输出时，PC 端和手机端都必须使用“自然语言步骤 + 可复制代码块”的格式。主流程中只把两个网址作为 Markdown 可点击链接输出：GitHub 登录页 `[https://github.com/login/device](https://github.com/login/device)`，GitHub Token 创建页 `[https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)`。其他需要用户复制、核对、粘贴或搜索的值都要单独放进 fenced code block，并使用脚本或 GitHub API 得到的真实动态值，例如 GitHub 登录名、vault 绝对路径、实际 private repository URL、clone URL、author name、author email、Obsidian 命令名和插件字段名。不要把 `<owner>`、`你的GitHub用户名`、`C:\path\to\vault` 等示例占位符作为最终用户输出。每一步必须说明：在哪里打开、搜索哪个命令、复制哪一段、哪个输入框留空、哪个输入框填写、看到什么算成功、出现已知错误时如何继续。PC 端完成后，必须用同样细节指导用户做 Windows Obsidian 测试，再进入手机端。若用户要求“模拟整个输出”“看看最终效果”或需要完整端到端话术，必须阅读并按 [references/user-facing-output.md](references/user-facing-output.md) 输出。
 
-1. 阅读 [references/desktop.md](references/desktop.md) 中文版。
+1. 阅读 [references/desktop.md](references/desktop.md) 中文版。若用户要求模拟或复盘完整用户输出，同时阅读 [references/user-facing-output.md](references/user-facing-output.md) 中文版。
 2. 直接运行 `scripts/setup-windows.ps1` 或默认入口 `npx obsidian-through`。该流程应自动安装缺失环境、打开 GitHub 登录页、创建或连接私有仓库、连接本地 Obsidian vault、安装 Windows 同步监听器并验证。
 3. 不要把内部 JSON、Git 细节或无意义选择项直接堆给用户；只输出必要进度、真实 GitHub 账号、真实 vault 路径、真实私有仓库地址和测试步骤。
 4. 登录成功后重新验证 GitHub 账号，不得要求用户在聊天中发送密码、验证码或 Token。
@@ -31,7 +31,7 @@ description: Configure, repair, explain, and verify private Obsidian synchroniza
 8. 运行无侵入检查；获得测试文件上传授权后运行事件探针。
 9. 请用户在 Windows Obsidian 新建或编辑测试笔记，并确认 GitHub 页面出现改动。用户未确认前，不得声称桌面连接成功。
 10. Windows 确认成功后，询问手机类型。若用户已说明设备类型，直接进入对应流程。
-11. 打开 GitHub Fine-grained Token 页面，显示 [references/mobile.md](references/mobile.md) 对应设备的完整说明，并让用户在手机上完成首次 Pull/Push。
+11. 运行手机配置脚本时必须带 `-OpenTokenPage`，主动弹出 GitHub Fine-grained Token 创建页面；若脚本不可用，直接用系统浏览器打开 `https://github.com/settings/personal-access-tokens/new`。同时在聊天中输出 `[https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)` 和 [references/mobile.md](references/mobile.md) 对应设备的完整说明，并让用户在手机上完成首次 Pull/Push。
 12. 用户在实体手机验证成功后，才宣布三端同步完成。
 
 ### 1. 检查环境
@@ -120,13 +120,13 @@ powershell -ExecutionPolicy Bypass -File scripts/mobile-setup-info.ps1 `
   -VaultPath "C:\笔记库路径" -OpenTokenPage
 ```
 
-向用户输出的手机配置消息必须包含可点击的 Obsidian 下载链接、Obsidian Git 插件链接、GitHub Token 创建链接、GitHub 邮箱设置链接、私有仓库页面、HTTPS `.git` 克隆地址、用户名、作者名和 noreply 邮箱。不得输出或索取 Token 值。
+向用户输出手机配置消息前，必须先通过 `scripts/mobile-setup-info.ps1 -OpenTokenPage` 自动弹出 GitHub Token 创建页面；如果脚本不可用，使用系统浏览器打开 `https://github.com/settings/personal-access-tokens/new`。消息本身只需要把 GitHub Token 创建页作为 Markdown 可点击链接输出：`[https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)`；其他私有仓库页面、HTTPS `.git` 克隆地址、用户名、作者名和 noreply 邮箱使用代码块输出。不得输出或索取 Token 值。
 
 所有可复制配置值都必须由 `scripts/mobile-setup-info.ps1` 或等价检查从当前用户的 GitHub 登录、私有仓库和 vault 远端生成。不得沿用历史对话中的账号、邮箱、仓库名、路径或示例值。
 
 若用户尚未说明手机系统，只询问一次 iPhone 或 Android；之后仅显示对应系统的完整步骤，不要同时堆叠无关步骤。
 
-每完成一个阶段都要求用户确认：安装 Obsidian、启用 Git 插件、创建并填写 Token、克隆仓库、首次 Pull、首次 Commit-and-sync。界面文字变化时，让用户使用 Obsidian 设置搜索和命令面板搜索文档中的稳定英文命令名称。
+每完成一个阶段都要求用户确认：安装 Obsidian、启用 Git 插件、在 `Settings -> Community plugins -> Git` 的 `Authentication/commit author` 区域先填写 `Username on your git server. E.g. your username on GitHub` 和 `Password/Personal access token`、再克隆仓库、首次 Pull、首次 Commit-and-sync。界面文字变化时，让用户使用 Obsidian 设置搜索和命令面板搜索文档中的稳定英文命令名称。私有仓库必须先填 GitHub username 和 Fine-grained Token 再执行 `Git: Clone existing remote repo`。
 
 使用 HTTPS 和仅授权单个仓库的 Fine-grained Token。禁止要求用户在聊天中发送 Token。使用 Git 同步时，不要同时让同一笔记库使用 iCloud。
 
@@ -166,9 +166,9 @@ When the user asks to configure Obsidian and GitHub, follow this exact order:
 
 Prefer `scripts/setup-windows.ps1` for one-click PC setup. The default `npx obsidian-through` entry must behave as an automatic Windows setup wizard: install missing Git/GitHub CLI, open GitHub web login, read the current GitHub account, detect the Obsidian vault, build the default private repository URL from the GitHub login, create or connect the private repository, upload or safely merge local notes, configure Windows event synchronization, and run verification. Do not ask the user for meaningless PC-side configuration choices. Stop for input only when the vault cannot be detected, GitHub login fails, conflicts require human resolution, or the user explicitly provides an existing repository.
 
-User-facing output for both PC and mobile must use natural-language steps plus fenced copy blocks. Every value the user must copy, verify, paste, or search must be placed in its own fenced code block and must come from scripts or GitHub API results: GitHub login, absolute vault path, actual private repository URL, clone URL, author name, author email, GitHub token page, Obsidian command names, and plugin field names. Do not output placeholders such as `<owner>`, `your GitHub username`, or `C:\path\to\vault` as final user instructions. Each step must explain where to open the UI, what command to search, what exact text to copy, which prompts to leave blank, which prompts to fill, what success looks like, and how to proceed for known errors. After PC setup, guide the Windows Obsidian test with the same level of detail before moving to mobile setup.
+User-facing output for both PC and mobile must use natural-language steps plus fenced copy blocks. In the main workflow, render only two URLs as Markdown clickable links: GitHub login page `[https://github.com/login/device](https://github.com/login/device)` and GitHub token creation page `[https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)`. Every other value the user must copy, verify, paste, or search must be placed in its own fenced code block and must come from scripts or GitHub API results: GitHub login, absolute vault path, actual private repository URL, clone URL, author name, author email, Obsidian command names, and plugin field names. Do not output placeholders such as `<owner>`, `your GitHub username`, or `C:\path\to\vault` as final user instructions. Each step must explain where to open the UI, what command to search, what exact text to copy, which prompts to leave blank, which prompts to fill, what success looks like, and how to proceed for known errors. After PC setup, guide the Windows Obsidian test with the same level of detail before moving to mobile setup. If the user asks to simulate the whole output, review the final effect, or provide end-to-end wording, read and follow [references/user-facing-output.md](references/user-facing-output.md).
 
-1. Read the English section in [references/desktop.md](references/desktop.md).
+1. Read the English section in [references/desktop.md](references/desktop.md). If the user asks to simulate or review the complete user-facing output, also read the English section in [references/user-facing-output.md](references/user-facing-output.md).
 2. Run `scripts/setup-windows.ps1` or the default `npx obsidian-through` entry directly. It must install missing prerequisites, open GitHub login, create or connect the private repository, connect the local Obsidian vault, install Windows synchronization, and verify.
 3. Do not dump internal JSON, Git details, or meaningless choices to the user. Show only necessary progress, the real GitHub account, real vault path, real private repository URL, and test steps.
 4. Revalidate the GitHub account. Never ask the user to send a password, verification code, or token in chat.
@@ -178,7 +178,7 @@ User-facing output for both PC and mobile must use natural-language steps plus f
 8. Run the noninvasive check and run the event probe only after authorization to upload temporary test files.
 9. Ask the user to create or edit a test note in Windows Obsidian and confirm that GitHub shows the change. Do not claim desktop success before confirmation.
 10. After Windows confirmation, ask for the phone type unless it is already known.
-11. Open the GitHub fine-grained token page, display the matching instructions from [references/mobile.md](references/mobile.md), and guide the first mobile Pull/Push.
+11. Run the mobile setup script with `-OpenTokenPage` so the GitHub fine-grained token page opens in the browser automatically. If the script is unavailable, open `https://github.com/settings/personal-access-tokens/new` in the system browser directly. Also print `[https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)` in chat, display the matching instructions from [references/mobile.md](references/mobile.md), and guide the first mobile Pull/Push.
 12. Claim three-endpoint success only after the user verifies it on the physical phone.
 
 ### 1. Discover the environment
@@ -273,11 +273,11 @@ powershell -ExecutionPolicy Bypass -File scripts/mobile-setup-info.ps1 `
   -VaultPath "C:\path\to\vault" -OpenTokenPage
 ```
 
-The mobile setup message must include clickable Obsidian download, Obsidian Git plugin, GitHub token, GitHub email settings, private repository, and repository clone links, plus username, author name, and noreply email. Never display or request the token value.
+Before sending the mobile setup message, automatically open the GitHub token creation page by running `scripts/mobile-setup-info.ps1 -OpenTokenPage`; if the script is unavailable, open `https://github.com/settings/personal-access-tokens/new` in the system browser. The message itself only needs the GitHub token creation page as a Markdown clickable link: `[https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)`. Print private repository URL, repository clone URL, username, author name, and noreply email as fenced copy blocks. Never display or request the token value.
 
 Every copyable configuration value must be generated by `scripts/mobile-setup-info.ps1` or an equivalent check from the current user's GitHub login, private repository, and vault remote. Never reuse accounts, emails, repository names, paths, or example values from prior conversations.
 
-If the phone platform is unknown, ask once whether it is iPhone or Android, then show only the relevant complete path. Require confirmation after installing Obsidian, enabling Git, creating and entering the token, cloning, first Pull, and first Commit-and-sync. If labels move in a future UI, use Settings search and Command Palette searches for the stable English command names in the guide.
+If the phone platform is unknown, ask once whether it is iPhone or Android, then show only the relevant complete path. Require confirmation after installing Obsidian, enabling Git, entering `Username on your git server. E.g. your username on GitHub` and `Password/Personal access token` under `Settings -> Community plugins -> Git` / `Authentication/commit author`, cloning, first Pull, and first Commit-and-sync. If labels move in a future UI, use Settings search and Command Palette searches for the stable English command names in the guide. For private repositories, the GitHub username and fine-grained token must be entered before running `Git: Clone existing remote repo`.
 
 Use HTTPS with a fine-grained token restricted to one repository. Never request the token in chat. Do not use iCloud for the same vault when Git is the synchronization mechanism.
 

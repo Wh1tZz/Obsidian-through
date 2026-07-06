@@ -2,7 +2,7 @@
 
 ## 0. 手机端用户输出格式
 
-手机端说明必须像逐步操作清单，而不是只给一个 clone 地址。所有值必须来自 `scripts/mobile-setup-info.ps1` 或等价检查，并用单独代码块输出，方便用户复制。不要把 `你的GitHub用户名`、`<owner>`、`<repository>` 等占位符作为最终用户可复制内容。
+手机端说明必须像逐步操作清单，而不是只给一个 clone 地址。主流程里只有 GitHub Token 创建页使用 Markdown 可点击链接：`[https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)`。其他值必须来自 `scripts/mobile-setup-info.ps1` 或等价检查，并用单独代码块输出，方便用户复制。不要把 `你的GitHub用户名`、`<owner>`、`<repository>` 等占位符作为最终用户可复制内容。
 
 开始手机端前，先输出真实动态清单：
 
@@ -59,26 +59,39 @@ https://github.com/<real owner>/<real repository>.git
 1. 在手机打开 Obsidian。
 2. 进入 `设置`，搜索或打开 `Community plugins` / 第三方插件。
 3. 安装并启用 `Git` / `Obsidian Git`。
-4. 回到 Obsidian 主界面，打开命令面板；如果找不到，搜索 `Command palette`。
-5. 在命令面板搜索并点击：
+4. 不要先克隆。先进入 `Settings -> Community plugins -> Git`，找到截图中类似 `Authentication/commit author` 的区域。
+5. 在 `Username on your git server. E.g. your username on GitHub` 输入框填写真实 GitHub 登录名：
+
+```text
+<real login>
+```
+
+6. 先自动弹出 GitHub Fine-grained Token 创建页面。执行手机配置时必须用脚本的 `-OpenTokenPage`，或等价地用系统浏览器打开这个可点击链接：
+
+[https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)
+
+7. 指导用户在弹出的 GitHub 页面创建 Fine-grained Token，复制后回到 Obsidian，把 Token 粘贴到 `Password/Personal access token` 输入框。这里不要输出 Token 值，不要要求用户把 Token 发到聊天里，不要把 Token 写进笔记或截图。
+8. 明确告诉用户：这两个认证字段必须在克隆私有仓库前填写，否则插件可能没有权限访问 GitHub 私有仓库。
+9. 回到 Obsidian 主界面，打开命令面板；如果找不到，搜索 `Command palette`。
+10. 在命令面板搜索并点击：
 
 ```text
 Git: Clone existing remote repo
 ```
 
-6. 当它要求填写仓库地址时，粘贴真实 clone URL：
+11. 当它要求填写仓库地址时，粘贴真实 clone URL：
 
 ```text
 https://github.com/<real owner>/<real repository>.git
 ```
 
-7. 如果询问 `Branch`，填写：
+12. 如果询问 `Branch`，填写：
 
 ```text
 main
 ```
 
-8. 如果询问：
+13. 如果询问：
 
 ```text
 Vault Root
@@ -86,7 +99,7 @@ Vault Root
 
 解释这是手机里克隆后的 vault 文件夹名，不是 GitHub 地址。若当前流程要求克隆到新 vault，填写一个新空文件夹名；若用户使用的插件版本要求留空克隆到当前根目录，则明确告诉用户留空。不要让用户猜。
 
-9. 如果询问：
+14. 如果询问：
 
 ```text
 Specify depth of clone
@@ -104,14 +117,14 @@ Specify depth of clone
 Invalid depth. Aborting clone.
 ```
 
-10. 克隆完成后，完全关闭并重新打开 Obsidian；如果克隆到了新文件夹，要从 vault 管理器打开克隆后的 vault。
-11. 重新打开后，进入命令面板，搜索并执行：
+15. 克隆完成后，完全关闭并重新打开 Obsidian；如果克隆到了新文件夹，要从 vault 管理器打开克隆后的 vault。
+16. 重新打开后，进入命令面板，搜索并执行：
 
 ```text
 Git: Pull
 ```
 
-12. 手机端新建测试笔记后，搜索并执行：
+17. 手机端新建测试笔记后，搜索并执行：
 
 ```text
 Git: Commit-and-sync
@@ -180,7 +193,7 @@ Push
 
 在手机浏览器完成：
 
-1. 打开 GitHub Token 页面：<https://github.com/settings/personal-access-tokens/new>。
+1. 先自动弹出 GitHub Token 页面；若没有弹出，手动打开：<https://github.com/settings/personal-access-tokens/new>。
 2. 如果出现登录页面，登录拥有私有仓库访问权的 GitHub 账号。
 3. 页面标题通常包含 `New fine-grained personal access token`。若界面改版，从头像菜单进入 `Settings`，搜索 `Personal access tokens`，选择 `Fine-grained tokens`，再选择生成新 Token。
 4. `Token name`：填写 `Obsidian iPhone` 或 `Obsidian Android`。
@@ -222,16 +235,17 @@ Push
 
 ## 5. iPhone 填写克隆仓库所需的昵称和 Key
 
-克隆私有仓库前，先在 Git 插件设置中找到认证区域。不同版本可能显示为 `Authentication`、`Remote`、`Username` 或 `Password/Token`。如果用户说“昵称和 key”，按下面解释：
+克隆私有仓库前，先在 Git 插件设置中找到认证区域。用户截图中常见位置是 `Settings -> Community plugins -> Git` 下的 `Authentication/commit author`。不同版本可能显示为 `Authentication`、`Remote`、`Username` 或 `Password/Token`。如果用户说“昵称和 key”，按下面解释：
 
 ```text
-昵称 / Username = GitHub 登录名
-Key / Password / Token = GitHub Fine-grained Token
+Username on your git server. E.g. your username on GitHub = GitHub 登录名
+Password/Personal access token = GitHub Fine-grained Token
 ```
 
-1. `Username`：填写清单中的 GitHub 账号。
-2. `Password/Token`：粘贴 Fine-grained Token，不是 GitHub 登录密码。
-3. 不要把 Token 写进仓库 URL、笔记或截图。
+1. 先填写 `Username on your git server. E.g. your username on GitHub`，值必须是清单中的真实 GitHub 账号。
+2. 再填写 `Password/Personal access token`，值是用户自己创建的 Fine-grained Token，不是 GitHub 登录密码。
+3. 这两项必须在 `Git: Clone existing remote repo` 前完成。
+4. 不要把 Token 写进仓库 URL、笔记或截图，也不要要求用户把 Token 发到聊天里。
 
 若当前插件版本在克隆命令中弹出 Username/Password 输入框，也可以在弹窗中填写同样的 GitHub username 和 Token。不要使用 GitHub 登录密码。
 
@@ -373,7 +387,7 @@ Commit-and-sync = 提交手机本地修改、拉取远端更新并推送到 GitH
 
 ## 0. Mobile User-Facing Output Format
 
-Mobile instructions must be a click-by-click checklist, not only a clone URL. Every value must come from `scripts/mobile-setup-info.ps1` or an equivalent check and must be placed in its own copy block. Do not present `your GitHub username`, `<owner>`, or `<repository>` placeholders as final user-copyable content.
+Mobile instructions must be a click-by-click checklist, not only a clone URL. In the main workflow, only the GitHub token creation page should be rendered as a Markdown clickable link: `[https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)`. Every other value must come from `scripts/mobile-setup-info.ps1` or an equivalent check and must be placed in its own copy block. Do not present `your GitHub username`, `<owner>`, or `<repository>` placeholders as final user-copyable content.
 
 Before mobile setup, show the real dynamic checklist:
 
@@ -430,26 +444,39 @@ Then guide the user step by step:
 1. Open Obsidian on the phone.
 2. Open `Settings`, then search for or open `Community plugins`.
 3. Install and enable `Git` / `Obsidian Git`.
-4. Return to the Obsidian main screen and open Command Palette. If the user cannot find it, search for `Command palette`.
-5. Search and run:
+4. Do not clone yet. Open `Settings -> Community plugins -> Git` and find the area similar to `Authentication/commit author`.
+5. In `Username on your git server. E.g. your username on GitHub`, enter the real GitHub login:
+
+```text
+<real login>
+```
+
+6. First open the GitHub fine-grained token creation page automatically. During mobile setup, run the script with `-OpenTokenPage` or equivalently open this clickable link in the system browser:
+
+[https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)
+
+7. Guide the user to create the fine-grained token in the opened GitHub page, copy it, return to Obsidian, and paste it into `Password/Personal access token`. Do not display the token value, never ask the user to send it in chat, and never write it into notes or screenshots.
+8. Tell the user clearly that these two authentication fields must be filled before cloning a private repository, otherwise the plugin may not have permission to access GitHub.
+9. Return to the Obsidian main screen and open Command Palette. If the user cannot find it, search for `Command palette`.
+10. Search and run:
 
 ```text
 Git: Clone existing remote repo
 ```
 
-6. When asked for the repository URL, paste the real clone URL:
+11. When asked for the repository URL, paste the real clone URL:
 
 ```text
 https://github.com/<real owner>/<real repository>.git
 ```
 
-7. If prompted for `Branch`, enter:
+12. If prompted for `Branch`, enter:
 
 ```text
 main
 ```
 
-8. If prompted for:
+13. If prompted for:
 
 ```text
 Vault Root
@@ -457,7 +484,7 @@ Vault Root
 
 Explain that this is the cloned vault folder name on the phone, not the GitHub URL. If cloning into a new vault folder, enter a new empty folder name. If the plugin version requires blank root for the current vault root, explicitly tell the user to leave it blank. Do not make the user guess.
 
-9. If prompted for:
+14. If prompted for:
 
 ```text
 Specify depth of clone
@@ -475,14 +502,14 @@ Do not enter the URL, branch name, or folder name as depth. If this error appear
 Invalid depth. Aborting clone.
 ```
 
-10. After clone, fully close and reopen Obsidian. If it cloned into a new folder, open the cloned folder as the vault from vault manager.
-11. After reopening, search Command Palette and run:
+15. After clone, fully close and reopen Obsidian. If it cloned into a new folder, open the cloned folder as the vault from vault manager.
+16. After reopening, search Command Palette and run:
 
 ```text
 Git: Pull
 ```
 
-12. After creating a mobile test note, search and run:
+17. After creating a mobile test note, search and run:
 
 ```text
 Git: Commit-and-sync
@@ -551,7 +578,7 @@ Explain four rules:
 
 Complete these steps in the phone browser:
 
-1. Open <https://github.com/settings/personal-access-tokens/new>.
+1. Open the GitHub token page automatically first. If it does not open, manually open <https://github.com/settings/personal-access-tokens/new>.
 2. Sign in to the GitHub account that can access the private repository.
 3. The page normally says `New fine-grained personal access token`. If the UI changes, open profile `Settings`, search for `Personal access tokens`, choose `Fine-grained tokens`, and generate a new token.
 4. Use `Obsidian iPhone` or `Obsidian Android` as Token name.
@@ -593,16 +620,17 @@ If a future Obsidian update moves buttons, use Settings search for `Community pl
 
 ## 5. Enter the nickname and key required for clone on iPhone
 
-Before cloning a private repository, find the authentication area in Git settings. Depending on version, it may appear as `Authentication`, `Remote`, `Username`, or `Password/Token`. If the user says "nickname and key", map the terms like this:
+Before cloning a private repository, find the authentication area in Git settings. In the user's screenshot, this is usually under `Settings -> Community plugins -> Git` as `Authentication/commit author`. Depending on version, it may appear as `Authentication`, `Remote`, `Username`, or `Password/Token`. If the user says "nickname and key", map the terms like this:
 
 ```text
-Nickname / Username = GitHub login
-Key / Password / Token = GitHub fine-grained token
+Username on your git server. E.g. your username on GitHub = GitHub login
+Password/Personal access token = GitHub fine-grained token
 ```
 
-1. Username: the GitHub login from the checklist.
-2. Password/Token: the fine-grained token, not the GitHub account password.
-3. Never place the token in a repository URL, note, or screenshot.
+1. Fill `Username on your git server. E.g. your username on GitHub` first, using the real GitHub login from the checklist.
+2. Fill `Password/Personal access token` next, using the user's fine-grained token, not the GitHub account password.
+3. These two fields must be completed before `Git: Clone existing remote repo`.
+4. Never place the token in a repository URL, note, or screenshot, and never ask the user to send the token in chat.
 
 If this plugin version prompts for Username/Password inside the clone command, enter the same GitHub username and token in that prompt. Do not use the GitHub account password.
 

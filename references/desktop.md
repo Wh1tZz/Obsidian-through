@@ -6,6 +6,8 @@ PC 端默认是自动流程。用户要求配置 Obsidian 和 GitHub 后，直�
 
 面向用户说话时，不要只说“复制这个地址”或“运行这个命令”。必须把 PC 端每个需要用户核对、复制、粘贴、打开或搜索的值放进单独的代码块，并说明用户应该在什么界面里使用它。
 
+主流程里只有 GitHub 登录页使用 Markdown 可点击链接。仓库页面、clone URL、vault 路径、命令名等仍使用代码块，方便复制和核对。
+
 所有代码块中的值必须来自当前运行结果：`setup-windows.ps1`、`publish-vault.ps1`、`verify-sync.ps1`、`gh api user`、`git remote get-url origin` 或等价检查。不要把示例占位符当成最终输出。
 
 GitHub 登录阶段应这样输出：
@@ -14,9 +16,7 @@ GitHub 登录阶段应这样输出：
 接下来我会打开 GitHub 官方授权页面。请只在浏览器里登录，不要把密码、验证码或 Token 发到聊天窗口。
 ```
 
-```text
-https://github.com/login/device
-```
+[https://github.com/login/device](https://github.com/login/device)
 
 如果 GitHub CLI 显示一次性 code，只让用户把 PowerShell 窗口里的 code 填到 GitHub 网页中；不要让用户把 code 发给聊天窗口。
 
@@ -246,6 +246,8 @@ PC setup is automatic by default. When the user asks to configure Obsidian and G
 
 When speaking to the user, do not only say "copy this URL" or "run this command." Every PC-side value the user must verify, copy, paste, open, or search must appear in its own fenced code block, with natural-language instructions explaining where to use it.
 
+In the main workflow, only the GitHub login page should be rendered as a Markdown clickable link. Repository pages, clone URLs, vault paths, and command names should remain in code blocks for copying and verification.
+
 Every value in a copy block must come from the current run: `setup-windows.ps1`, `publish-vault.ps1`, `verify-sync.ps1`, `gh api user`, `git remote get-url origin`, or an equivalent check. Do not present example placeholders as final instructions.
 
 For GitHub login, output:
@@ -254,9 +256,7 @@ For GitHub login, output:
 I will open the official GitHub authorization page. Sign in only in the browser. Do not send your password, verification code, or token in chat.
 ```
 
-```text
-https://github.com/login/device
-```
+[https://github.com/login/device](https://github.com/login/device)
 
 If GitHub CLI shows a one-time code, tell the user to enter the code from the PowerShell window into the GitHub webpage. Do not ask them to send the code in chat.
 
