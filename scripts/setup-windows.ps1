@@ -6,6 +6,7 @@ param(
     [switch]$InstallIfMissing,
     [switch]$OpenRepositoryPage,
     [switch]$Yes,
+    [switch]$Interactive,
     [string]$Proxy = "",
     [int]$DebounceSeconds = 15,
     [int]$PullIntervalSeconds = 30
@@ -34,7 +35,7 @@ function Read-WithDefault {
 
 function Confirm-Continue {
     param([string]$Message)
-    if ($Yes) { return }
+    if ($Yes -or -not $Interactive) { return }
     $answer = Read-Host "$Message Press Enter to continue, or type N to cancel"
     if ($answer -match '^(n|no)$') { throw "Cancelled by user." }
 }
@@ -51,6 +52,30 @@ function Invoke-JsonScript {
         throw "$ScriptName failed with exit code $exitCode. $($output -join ' ')"
     }
     return ($output | ConvertFrom-Json)
+}
+
+function Convert-JsonObjectOutput {
+    param([object[]]$Output)
+    $text = ($Output -join "`n")
+    $start = $text.IndexOf("{")
+    $end = $text.LastIndexOf("}")
+    if ($start -lt 0 -or $end -lt $start) {
+        throw "Expected JSON output but received: $text"
+    }
+    return $text.Substring($start, $end - $start + 1) | ConvertFrom-Json
+}
+
+function Invoke-ChildPowerShell {
+    param([string[]]$Arguments)
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & powershell.exe @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    return [pscustomobject]@{ output = $output; exitCode = $exitCode }
 }
 
 function Find-Tool {
@@ -118,26 +143,22 @@ function Select-VaultPath {
 
     $candidates = @(Get-ObsidianVaultCandidates)
     if ($candidates.Count -eq 1) {
-        Write-Host "Found Obsidian vault: $($candidates[0])"
-        if (-not $Yes) { Confirm-Continue "Use this vault?" }
         return $candidates[0]
     }
 
     if ($candidates.Count -gt 1) {
-        Write-Host "Found these Obsidian vaults:"
-        for ($i = 0; $i -lt $candidates.Count; $i++) {
-            Write-Host "  $($i + 1). $($candidates[$i])"
+        if (-not $Interactive) {
+            return $candidates[0]
         }
-        if ($Yes) { return $candidates[0] }
+        Write-Host "Found these Obsidian vaults:"
+        for ($i = 0; $i -lt $candidates.Count; $i++) { Write-Host "  $($i + 1). $($candidates[$i])" }
         $choice = Read-WithDefault "Choose vault number" "1"
         $index = [int]$choice - 1
         if ($index -lt 0 -or $index -ge $candidates.Count) { throw "Invalid vault selection." }
         return $candidates[$index]
     }
 
-    if ($Yes) {
-        throw "No Obsidian vault was found automatically. Rerun with --vault."
-    }
+    if (-not $Interactive) { throw "No Obsidian vault was found automatically. Rerun with --vault." }
     $manual = Read-Host "Enter your Obsidian vault path"
     $resolvedManual = (Resolve-Path -LiteralPath $manual).Path
     if (-not (Test-Path -LiteralPath (Join-Path $resolvedManual ".obsidian"))) {
@@ -184,42 +205,32 @@ function Get-OriginRepositoryUrl {
     return ""
 }
 
-Write-Host "Obsidian-through Windows setup"
-Write-Host "This wizard configures this PC's Obsidian vault to sync with a private GitHub repository."
+Write-Host "Obsidian-through is setting up this PC."
 
 Write-Step "Checking Git and GitHub CLI"
-try {
-    $toolArgs = @()
-    if ($InstallIfMissing) { $toolArgs += "-InstallIfMissing" }
-    $tools = Invoke-JsonScript -ScriptName "ensure-git-tools.ps1" -Arguments $toolArgs
-} catch {
-    if ($Yes -or $InstallIfMissing) { throw }
-    Write-Host $_.Exception.Message
-    Confirm-Continue "Git or GitHub CLI is missing. Install them with winget?"
-    $tools = Invoke-JsonScript -ScriptName "ensure-git-tools.ps1" -Arguments @("-InstallIfMissing")
-}
-Write-Host "Git: $($tools.gitVersion)"
-Write-Host "GitHub CLI: $($tools.ghVersion)"
+$tools = Invoke-JsonScript -ScriptName "ensure-git-tools.ps1" -Arguments @("-InstallIfMissing")
+Write-Host "Required tools are ready."
 
 $gitExe = (Resolve-Path -LiteralPath $tools.gitPath).Path
 $ghExe = (Resolve-Path -LiteralPath $tools.ghPath).Path
 
 Write-Step "Signing in to GitHub"
+Write-Host "A GitHub login page will open. Finish login in the browser; do not paste passwords, codes, or tokens into chat."
 $loginArgs = @("-GhExe", $ghExe, "-QuietOutput")
 if ($Proxy) { $loginArgs += @("-Proxy", $Proxy) }
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "github-web-login.ps1") @loginArgs
 if ($LASTEXITCODE -ne 0) { throw "GitHub login failed." }
 $account = (& $ghExe api user) | ConvertFrom-Json
-Write-Host "GitHub account: $($account.login)"
+Write-Host "GitHub login: $($account.login)"
 
-Write-Step "Selecting Obsidian vault"
+Write-Step "Finding the Obsidian vault"
 $selectedVault = Select-VaultPath
 Write-Host "Vault: $selectedVault"
 
-Write-Step "Selecting private GitHub repository"
+Write-Step "Preparing the private GitHub repository"
 $originUrl = Get-OriginRepositoryUrl -Path $selectedVault -GitExe $gitExe
 $defaultRepo = if ($RepositoryUrl) { $RepositoryUrl } elseif ($originUrl) { $originUrl } else { "https://github.com/$($account.login)/$RepositoryName.git" }
-if ($Yes) {
+if (-not $Interactive) {
     $targetRepo = Normalize-RepositoryUrl -Value $defaultRepo -Login $account.login
 } else {
     Write-Host "If the repository already exists, paste its GitHub URL."
@@ -228,13 +239,6 @@ if ($Yes) {
     $targetRepo = Normalize-RepositoryUrl -Value $repoInput -Login $account.login
 }
 Write-Host "Repository: $targetRepo"
-
-Write-Host ""
-Write-Host "Ready to configure PC sync:"
-Write-Host "  Vault:      $selectedVault"
-Write-Host "  Repository: $targetRepo"
-Write-Host "  Visibility: PRIVATE required"
-Write-Host "  Watcher:    commit/push after $DebounceSeconds seconds of quiet editing; pull every $PullIntervalSeconds seconds when clean"
 Confirm-Continue "This will upload or merge the selected vault with the private GitHub repository."
 
 Write-Step "Publishing or connecting the vault"
@@ -245,24 +249,32 @@ $publishArgs = @(
     "-GhExe", $ghExe,
     "-ConfirmUpload"
 )
-if ($OpenRepositoryPage -or -not $Yes) { $publishArgs += "-OpenRepositoryPage" }
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "publish-vault.ps1") @publishArgs
-if ($LASTEXITCODE -ne 0) { throw "Publishing or repository connection failed." }
+$publishCommand = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "publish-vault.ps1")) + $publishArgs
+$publishRun = Invoke-ChildPowerShell -Arguments $publishCommand
+if ($publishRun.exitCode -ne 0) { throw "Publishing or repository connection failed." }
+$publishResult = Convert-JsonObjectOutput -Output $publishRun.output
+Write-Host "Private repository connected: $($publishResult.repositoryUrl)"
 
 Write-Step "Configuring Obsidian Git plugin settings for Windows watcher mode"
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "configure-windows-obsidian-git.ps1") -VaultPath $selectedVault -Mode EventWatcher
-if ($LASTEXITCODE -ne 0) { throw "Unable to configure Obsidian Git settings." }
+$configureRun = Invoke-ChildPowerShell -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "configure-windows-obsidian-git.ps1"), "-VaultPath", $selectedVault, "-Mode", "EventWatcher")
+if ($configureRun.exitCode -ne 0) { throw "Unable to configure Obsidian Git settings." }
 
 Write-Step "Installing hidden Windows event watcher"
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "install-windows-event-sync.ps1") -VaultPath $selectedVault -GitExe $gitExe -DebounceSeconds $DebounceSeconds -PullIntervalSeconds $PullIntervalSeconds
-if ($LASTEXITCODE -ne 0) { throw "Unable to install the Windows event watcher." }
+$watcherRun = Invoke-ChildPowerShell -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "install-windows-event-sync.ps1"), "-VaultPath", $selectedVault, "-GitExe", $gitExe, "-DebounceSeconds", $DebounceSeconds, "-PullIntervalSeconds", $PullIntervalSeconds)
+if ($watcherRun.exitCode -ne 0) { throw "Unable to install the Windows event watcher." }
+$watcherResult = Convert-JsonObjectOutput -Output $watcherRun.output
+Write-Host "Watcher task: $($watcherResult.taskName)"
 
 Write-Step "Verifying PC sync state"
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "verify-sync.ps1") -VaultPath $selectedVault -GitExe $gitExe
-if ($LASTEXITCODE -ne 0) { throw "Verification failed. Review the output above." }
+$verifyRun = Invoke-ChildPowerShell -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "verify-sync.ps1"), "-VaultPath", $selectedVault, "-GitExe", $gitExe)
+if ($verifyRun.exitCode -ne 0) { throw "Verification failed. Review the output above." }
+$verifyResult = Convert-JsonObjectOutput -Output $verifyRun.output
 
 Write-Host ""
 Write-Host "PC sync setup is complete."
+Write-Host "GitHub repository: $($publishResult.repositoryUrl)"
+Write-Host "Worktree clean: $($verifyResult.worktreeClean)"
+Write-Host "Local and remote match: $($verifyResult.hashesMatch)"
 Write-Host "Next test: create or edit one note in Windows Obsidian, wait about $DebounceSeconds seconds, then refresh the GitHub repository page."
 Write-Host "For phone setup, run:"
 Write-Host "  npx obsidian-through mobile-info --vault `"$selectedVault`" --open-token-page"

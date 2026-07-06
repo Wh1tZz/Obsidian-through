@@ -17,13 +17,13 @@ description: Configure, repair, explain, and verify private Obsidian synchroniza
 
 当用户说“帮我配置 Obsidian 和 GitHub”或同义请求时，必须按以下顺序执行：
 
-优先使用 `scripts/setup-windows.ps1` 完成 PC 端傻瓜式配置。默认入口 `npx obsidian-through` 应等价于 Windows 一键向导：检查 Git/GitHub CLI、打开 GitHub 网页登录、识别或询问 Obsidian vault、基于用户当前 GitHub 登录生成默认私有仓库地址、创建或连接私有仓库、上传或安全合并本地笔记、配置 Windows 事件监听同步、最后运行验证。上传前必须展示 vault 路径、目标 GitHub 仓库和 `PRIVATE` 要求，并获得用户确认；不得静默上传笔记。
+优先使用 `scripts/setup-windows.ps1` 完成 PC 端傻瓜式配置。默认入口 `npx obsidian-through` 应等价于 Windows 一键自动向导：自动检查并安装缺失的 Git/GitHub CLI、直接打开 GitHub 网页登录、获取当前 GitHub 账号、自动识别 Obsidian vault、基于当前 GitHub 登录生成默认私有仓库地址、创建或连接私有仓库、上传或安全合并本地笔记、配置 Windows 事件监听同步、最后运行验证。不要在 PC 端预先询问无意义配置项；只有自动定位不到 vault、GitHub 登录失败、远程冲突需要人工处理或用户明确提供现有仓库时才停下来要求输入。
 
 面向用户输出时，PC 端和手机端都必须使用“自然语言步骤 + 可复制代码块”的格式。所有需要用户复制、核对、粘贴或搜索的值都要单独放进 fenced code block，并使用脚本或 GitHub API 得到的真实动态值，例如 GitHub 登录名、vault 绝对路径、实际 private repository URL、clone URL、author name、author email、GitHub token 页面、Obsidian 命令名和插件字段名。不要把 `<owner>`、`你的GitHub用户名`、`C:\path\to\vault` 等示例占位符作为最终用户输出。每一步必须说明：在哪里打开、搜索哪个命令、复制哪一段、哪个输入框留空、哪个输入框填写、看到什么算成功、出现已知错误时如何继续。PC 端完成后，必须用同样细节指导用户做 Windows Obsidian 测试，再进入手机端。
 
 1. 阅读 [references/desktop.md](references/desktop.md) 中文版。
-2. 运行 `scripts/ensure-git-tools.ps1` 检查 Git 和 GitHub CLI。缺失时先向用户确认安装，再使用 `-InstallIfMissing` 安装并复查版本。
-3. 检查 `gh auth status`。未登录时运行 `scripts/github-web-login.ps1`，直接启动 GitHub 网页授权，并等待用户在浏览器完成登录。
+2. 直接运行 `scripts/setup-windows.ps1` 或默认入口 `npx obsidian-through`。该流程应自动安装缺失环境、打开 GitHub 登录页、创建或连接私有仓库、连接本地 Obsidian vault、安装 Windows 同步监听器并验证。
+3. 不要把内部 JSON、Git 细节或无意义选择项直接堆给用户；只输出必要进度、真实 GitHub 账号、真实 vault 路径、真实私有仓库地址和测试步骤。
 4. 登录成功后重新验证 GitHub 账号，不得要求用户在聊天中发送密码、验证码或 Token。
 5. 定位笔记库，向用户明确显示将上传的本地路径、GitHub 账号、仓库名和 `PRIVATE` 可见性。
 6. 获得上传授权后运行 `scripts/publish-vault.ps1 -ConfirmUpload`，初始化 Git、创建或连接私有仓库并完成首次推送。用户已有仓库时，优先接收完整 GitHub 仓库 URL，使用 `-RepositoryUrl` 和 `-OpenRepositoryPage`，不要反复要求用户拆分 owner、仓库名和 `.git` 地址。
@@ -164,13 +164,13 @@ Treat the user's private GitHub vault repository as the source of truth. The ski
 
 When the user asks to configure Obsidian and GitHub, follow this exact order:
 
-Prefer `scripts/setup-windows.ps1` for one-click PC setup. The default `npx obsidian-through` entry must behave as the Windows setup wizard: check Git/GitHub CLI, open GitHub web login, detect or ask for the Obsidian vault, build the default private repository URL from the current GitHub login, create or connect the private repository, upload or safely merge local notes, configure Windows event synchronization, and run verification. Before upload, show the vault path, target GitHub repository, and `PRIVATE` requirement, then obtain user confirmation. Never silently upload notes.
+Prefer `scripts/setup-windows.ps1` for one-click PC setup. The default `npx obsidian-through` entry must behave as an automatic Windows setup wizard: install missing Git/GitHub CLI, open GitHub web login, read the current GitHub account, detect the Obsidian vault, build the default private repository URL from the GitHub login, create or connect the private repository, upload or safely merge local notes, configure Windows event synchronization, and run verification. Do not ask the user for meaningless PC-side configuration choices. Stop for input only when the vault cannot be detected, GitHub login fails, conflicts require human resolution, or the user explicitly provides an existing repository.
 
 User-facing output for both PC and mobile must use natural-language steps plus fenced copy blocks. Every value the user must copy, verify, paste, or search must be placed in its own fenced code block and must come from scripts or GitHub API results: GitHub login, absolute vault path, actual private repository URL, clone URL, author name, author email, GitHub token page, Obsidian command names, and plugin field names. Do not output placeholders such as `<owner>`, `your GitHub username`, or `C:\path\to\vault` as final user instructions. Each step must explain where to open the UI, what command to search, what exact text to copy, which prompts to leave blank, which prompts to fill, what success looks like, and how to proceed for known errors. After PC setup, guide the Windows Obsidian test with the same level of detail before moving to mobile setup.
 
 1. Read the English section in [references/desktop.md](references/desktop.md).
-2. Run `scripts/ensure-git-tools.ps1` to check Git and GitHub CLI. If either is missing, obtain installation approval, run it with `-InstallIfMissing`, and recheck versions.
-3. Check `gh auth status`. If unauthenticated, run `scripts/github-web-login.ps1` to launch GitHub web authorization and wait for the user to finish in the browser.
+2. Run `scripts/setup-windows.ps1` or the default `npx obsidian-through` entry directly. It must install missing prerequisites, open GitHub login, create or connect the private repository, connect the local Obsidian vault, install Windows synchronization, and verify.
+3. Do not dump internal JSON, Git details, or meaningless choices to the user. Show only necessary progress, the real GitHub account, real vault path, real private repository URL, and test steps.
 4. Revalidate the GitHub account. Never ask the user to send a password, verification code, or token in chat.
 5. Locate the vault and show the exact local path, GitHub account, repository name, and `PRIVATE` visibility.
 6. Before creating or connecting a repository, ask whether the user already created the private GitHub repository they want to import into Obsidian. If no repository exists and the local vault has notes, create a new private repository and upload the local notes. If a repository exists and the local vault is empty or this is a new device, clone the existing repository. If a repository exists and the local vault also has notes, safely merge local and remote histories after creating a backup branch; never force-push or overwrite either side. Run `scripts/publish-vault.ps1 -ConfirmUpload` with `-RepositoryUrl` and `-OpenRepositoryPage`; do not repeatedly ask the user to split owner, repository name, and `.git` URL.

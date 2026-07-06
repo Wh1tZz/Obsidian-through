@@ -1,6 +1,8 @@
 # 中文版
 
-## 0. PC 端用户输出格式
+## 0. PC 端自动安装和用户输出格式
+
+PC 端默认是自动流程。用户要求配置 Obsidian 和 GitHub 后，直接运行 `scripts/setup-windows.ps1` 或 `npx obsidian-through`。不要先问用户是否安装 Git/GitHub CLI；缺失时通过 `ensure-git-tools.ps1 -InstallIfMissing` 自动安装。不要先询问仓库名；登录 GitHub 后默认使用当前账号下的 `obsidian-vault` 私有仓库，除非 vault 已经有 origin 或用户主动提供现有仓库 URL。
 
 面向用户说话时，不要只说“复制这个地址”或“运行这个命令”。必须把 PC 端每个需要用户核对、复制、粘贴、打开或搜索的值放进单独的代码块，并说明用户应该在什么界面里使用它。
 
@@ -85,21 +87,33 @@ https://github.com/<real owner>/<real repository>
 
 ## 自动登录与桌面配置
 
-### 1. 检查必需软件
+### 1. 检查并自动安装必需软件
 
 先运行：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/ensure-git-tools.ps1
-```
-
-脚本会输出 Git、GitHub CLI、版本和路径。若缺失，不得静默安装。先向用户说明将通过 Windows Package Manager 安装 `Git.Git` 和/或 `GitHub.cli`，获得确认后运行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/ensure-git-tools.ps1 -InstallIfMissing
 ```
 
-安装结束后必须重新运行检查，确认两个工具均可执行。若 `winget` 不存在或安装失败，停止并提供官方安装方式，不要伪造成功状态。
+脚本会检查 Git 和 GitHub CLI。若缺失，直接通过 Windows Package Manager 安装 `Git.Git` 和/或 `GitHub.cli`，然后复查版本。不要把完整工具路径和内部 JSON 堆给用户，只需要说明：
+
+```text
+正在检查并安装同步所需环境。
+```
+
+安装完成后输出：
+
+```text
+Git 和 GitHub CLI 已准备完成。
+```
+
+若 `winget` 不存在或安装失败，停止并提示用户手动安装官方 Git 和 GitHub CLI；不要伪造成成功状态。
+
+仍可单独运行底层脚本：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ensure-git-tools.ps1 -InstallIfMissing
+```
 
 ### 2. 弹出 GitHub 登录界面
 
@@ -136,7 +150,13 @@ powershell -ExecutionPolicy Bypass -File scripts/github-web-login.ps1 `
 
 ### 4. 建立私有仓库
 
-获得用户对明确本地路径和目标私有仓库的上传授权后运行：
+默认不询问仓库名。登录 GitHub 后，若 vault 已经有 GitHub origin，就沿用该 origin；否则创建或连接当前 GitHub 账号下的默认私有仓库：
+
+```text
+https://github.com/<real login>/obsidian-vault.git
+```
+
+如果用户主动提供现有仓库 URL，才使用用户提供的 URL。执行时运行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/publish-vault.ps1 `
@@ -220,7 +240,9 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 `
 
 # English Version
 
-## 0. PC User-Facing Output Format
+## 0. Automatic PC Installation and User-Facing Output Format
+
+PC setup is automatic by default. When the user asks to configure Obsidian and GitHub, run `scripts/setup-windows.ps1` or `npx obsidian-through` directly. Do not ask whether to install Git/GitHub CLI first; if missing, install them through `ensure-git-tools.ps1 -InstallIfMissing`. Do not ask for a repository name first; after GitHub login, default to the authenticated account's `obsidian-vault` private repository unless the vault already has an origin or the user explicitly provides an existing repository URL.
 
 When speaking to the user, do not only say "copy this URL" or "run this command." Every PC-side value the user must verify, copy, paste, open, or search must appear in its own fenced code block, with natural-language instructions explaining where to use it.
 
@@ -305,21 +327,33 @@ https://github.com/<real owner>/<real repository>
 
 ## Automatic login and desktop configuration
 
-### 1. Check required software
+### 1. Check and automatically install required software
 
 Run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/ensure-git-tools.ps1
-```
-
-The script reports Git, GitHub CLI, versions, and paths. Never install silently. Explain that Windows Package Manager will install `Git.Git` and/or `GitHub.cli`, obtain approval, then run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/ensure-git-tools.ps1 -InstallIfMissing
 ```
 
-Run the check again after installation. If `winget` is unavailable or installation fails, stop and provide official installation guidance instead of claiming success.
+The script checks Git and GitHub CLI. If either is missing, install `Git.Git` and/or `GitHub.cli` directly through Windows Package Manager, then recheck versions. Do not dump full tool paths or internal JSON to the user. Say only:
+
+```text
+Checking and installing the sync environment.
+```
+
+After installation, say:
+
+```text
+Git and GitHub CLI are ready.
+```
+
+If `winget` is unavailable or installation fails, stop and ask the user to install official Git and GitHub CLI manually. Do not claim success.
+
+The low-level command is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ensure-git-tools.ps1 -InstallIfMissing
+```
 
 ### 2. Launch GitHub login
 
@@ -356,12 +390,13 @@ Before acting, show:
 
 ### 4. Build the private repository
 
-Before creating anything, ask the user one direct question: do they already have the private GitHub repository that should become the Obsidian vault source?
+Do not ask for the repository name by default. After GitHub login, if the vault already has a GitHub origin, reuse that origin. Otherwise create or connect the default private repository under the authenticated GitHub account:
 
-- If no repository exists and the local vault has notes, ask for the desired repository name, create a new private GitHub repository under the authenticated account, then upload the local notes.
-- If no repository exists and the local target is empty, ask for the desired repository name, create a new private GitHub repository, then use it as the sync destination.
-- If a repository already exists and this is a new PC or empty target folder, ask for the full GitHub repository URL, clone it, and open the cloned folder as the Obsidian vault.
-- If a repository already exists and the local vault also has notes, ask for the full GitHub repository URL, inspect both histories, create a local backup branch, and merge local and remote content. If conflicts appear, stop with the conflict files intact and resolve them; never force-push over the remote.
+```text
+https://github.com/<real login>/obsidian-vault.git
+```
+
+Use a user-provided repository URL only when the user explicitly provides one.
 
 After the user authorizes uploading the exact local path to the confirmed private repository, run:
 
