@@ -92,6 +92,8 @@ Windows PC = 主同步端，事件监听自动提交，静默定时 Pull
 
 重新运行 `scripts/install-windows-event-sync.ps1`。安装器会停止旧任务和残留监听进程，取消电池停止限制，并注册登录自启和每分钟运行一次的 watchdog。不要只看任务显示的 `Running` 或 `Ready`；同时检查 `watcherProcesses` 是否存在后台监听进程。新版 watchdog 只匹配 `-File watch-vault.ps1`，不会把自己的 `-WatcherPath` 参数误判成监听器。运行 `verify-sync.ps1 -RunWatcherRecoveryProbe` 可验证监听进程被终止后是否会自动恢复；watchdog 日志出现 `started target task` 表示恢复成功。
 
+若日志显示 `push failed`、`fetch failed; push skipped` 或 `pending push failed`，不要反复编辑测试文件。保持工作区不再修改并恢复网络；监听器会在下一次周期检查中自动变基并补推。日志出现 `pending push complete` 后，再运行 `verify-sync.ps1` 确认本地与远端哈希一致。
+
 ## Windows 周期性弹出 CLI 窗口
 
 检查 `Obsidian Git Event Sync ...` 和 `Obsidian Git Sync Watchdog ...` 计划任务的 `Execute` 字段。新版安装器应让两个任务都使用 `wscript.exe`，避免开机登录和每分钟检查时弹窗。若任意一个仍显示 `powershell.exe`，重新运行 `scripts/install-windows-event-sync.ps1`。
@@ -211,6 +213,8 @@ Validate devices one at a time: Windows with GitHub, then the main phone, then t
 ## Windows main sync task is stuck in Ready
 
 Run `scripts/install-windows-event-sync.ps1` again. The installer stops the old task and leftover watcher process, removes battery-stop restrictions, and registers both logon startup and a watchdog that runs every minute. Do not rely only on the task's `Running` or `Ready` label; also confirm that `watcherProcesses` contains a background watcher. The current watchdog matches only `-File watch-vault.ps1`, so its own `-WatcherPath` argument cannot be mistaken for the watcher. Run `verify-sync.ps1 -RunWatcherRecoveryProbe` to confirm automatic recovery after the watcher is terminated. `started target task` in the watchdog log means recovery succeeded.
+
+If the log shows `push failed`, `fetch failed; push skipped`, or `pending push failed`, do not repeatedly edit test files. Leave the worktree unchanged and restore connectivity. The watcher rebases and retries the pending push during the next periodic check. After `pending push complete` appears, run `verify-sync.ps1` and confirm matching local and remote hashes.
 
 ## Windows periodically flashes a CLI window
 

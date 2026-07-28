@@ -59,6 +59,22 @@ function Invoke-CleanPull {
     if ($LASTEXITCODE -ne 0 -or $status.Count -gt 0) { return }
     & $GitExe -C $VaultPath fetch $Remote $Branch 2>&1 | ForEach-Object { Write-SyncLog $_ }
     if ($LASTEXITCODE -ne 0) { Write-SyncLog "clean fetch failed"; return }
+
+    $aheadOutput = @(& $GitExe -C $VaultPath rev-list --count "$Remote/$Branch..HEAD" 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        Write-SyncLog "ahead check failed: $($aheadOutput -join ' ')"
+        return
+    }
+    $aheadCount = [int](($aheadOutput | Select-Object -First 1).ToString().Trim())
+
+    if ($aheadCount -gt 0) {
+        & $GitExe -C $VaultPath rebase "$Remote/$Branch" 2>&1 | ForEach-Object { Write-SyncLog $_ }
+        if ($LASTEXITCODE -ne 0) { Write-SyncLog "pending push rebase failed"; return }
+        & $GitExe -C $VaultPath push $Remote $Branch 2>&1 | ForEach-Object { Write-SyncLog $_ }
+        if ($LASTEXITCODE -eq 0) { Write-SyncLog "pending push complete" } else { Write-SyncLog "pending push failed" }
+        return
+    }
+
     & $GitExe -C $VaultPath merge --ff-only "$Remote/$Branch" 2>&1 | ForEach-Object { Write-SyncLog $_ }
     if ($LASTEXITCODE -ne 0) { Write-SyncLog "clean fast-forward failed" }
 }

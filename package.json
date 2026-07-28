@@ -1,6 +1,6 @@
 {
   "name": "obsidian-through",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Private Obsidian synchronization workflow through GitHub.",
   "bin": {
     "obsidian-through": "bin/obsidian-through.js"
