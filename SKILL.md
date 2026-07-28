@@ -81,7 +81,7 @@ powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 
 
 安装器会注册当前用户登录自启任务并立即启动。本地提交和推送只由文件事件触发；停止编辑约 15 秒后提交并推送。隐藏任务在工作区干净时每 30 秒静默拉取手机更新，不会调用 Obsidian 通知。不要默认低于 10 秒，过短会制造大量碎提交并增加多设备冲突概率。
 
-安装器同时注册 `Obsidian Git Sync Watchdog ...` 守护任务。主任务和守护任务都通过 `wscript.exe` 与 `run-hidden.vbs` 隐藏启动 PowerShell，避免开机登录或周期检查时弹出 CLI 窗口。使用隐藏启动器后，主任务可能显示 `Running` 或 `Ready`；以 `verify-sync.ps1` 输出的 `watcherProcesses` 判断真实监听是否存活。守护任务每分钟检查真实的 `watch-vault.ps1` 进程，若主监听因睡眠、电池、系统中断或异常退出而停止，会自动重新启动。
+安装器同时注册 `Obsidian Git Sync Watchdog ...` 守护任务。主任务和守护任务都通过 `wscript.exe` 与 `run-hidden.vbs` 隐藏启动 PowerShell，避免开机登录或周期检查时弹出 CLI 窗口。两个任务都允许电池供电、禁止因切换电池而停止，并在当前用户登录后启动。使用隐藏启动器后，主任务可能显示 `Running` 或 `Ready`；以 `verify-sync.ps1` 输出的 `watcherProcesses` 判断真实监听是否存活。守护任务每分钟只匹配以 `-File watch-vault.ps1` 启动的真实监听进程，不能把自身误判为监听器；若主监听因睡眠、电池、系统中断或异常退出而停止，会清理失效任务状态并自动重新启动。
 
 关闭 Windows Obsidian Git 插件的自动提交、周期自动拉取和普通通知，但开启 `Pull on startup`，确保每次打开 Obsidian 立即拉取一次。插件可保留用于历史记录和手动命令。
 
@@ -100,11 +100,20 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 `
   -VaultPath "C:\笔记库路径" -RunEventProbe
 ```
 
+安装或修复后运行恢复探针，主动终止一次监听进程并验证守护任务能够重新拉起：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 `
+  -VaultPath "C:\笔记库路径" -RunWatcherRecoveryProbe
+```
+
 只有满足以下全部条件才能宣布成功：
 
-- GitHub CLI 可验证时，仓库必须为私有。
+- GitHub CLI 必须成功验证仓库为 `PRIVATE`；`unknown`、查询失败或任何非私有状态均不得通过。
 - 监听任务和守护任务存在。
 - `watcherProcesses` 至少包含一个后台监听进程；若监听进程被停止，守护任务能够重新拉起。
+- 监听与守护任务均包含登录触发器，守护任务还包含每分钟触发器，且两个任务都不会因电池供电停止。
+- 两个任务均通过 `wscript.exe` 隐藏启动并配置失败重启策略。
 - 创建和删除事件无需手动 Git 命令即可提交并推送。
 - 工作区干净。
 - 本地与远端哈希一致。
@@ -232,7 +241,7 @@ powershell -ExecutionPolicy Bypass -File scripts/install-windows-event-sync.ps1 
 
 The installer registers a per-user logon task and starts it immediately. Local commits and pushes occur only after file events and a short quiet period; a hidden clean-worktree pull checks for phone updates every 30 seconds without using Obsidian notices. Use 15 seconds for responsive desktop sync; avoid values below 10 seconds unless the user explicitly accepts many small commits and higher conflict risk.
 
-The installer also registers an `Obsidian Git Sync Watchdog ...` task. Both the main task and watchdog launch PowerShell through `wscript.exe` and `run-hidden.vbs`, avoiding CLI windows at logon and during periodic checks. With the hidden launcher, the main task may appear as `Running` or `Ready`; use `watcherProcesses` from `verify-sync.ps1` to determine whether the real watcher is alive. The watchdog checks the real `watch-vault.ps1` process every minute and restarts it after sleep, battery transitions, system interruption, or abnormal exit.
+The installer also registers an `Obsidian Git Sync Watchdog ...` task. Both the main task and watchdog launch PowerShell through `wscript.exe` and `run-hidden.vbs`, avoiding CLI windows at logon and during periodic checks. Both tasks are allowed on battery power, are not stopped by a battery transition, and start at user logon. With the hidden launcher, the main task may appear as `Running` or `Ready`; use `watcherProcesses` from `verify-sync.ps1` to determine whether the real watcher is alive. Every minute, the watchdog matches only a process launched with `-File watch-vault.ps1`, so it cannot mistake its own command line for the watcher. If the watcher stops after sleep, a power transition, system interruption, or abnormal exit, the watchdog clears stale task state and restarts it.
 
 Disable Obsidian Git automatic commit, periodic automatic pull, and ordinary notices on Windows, but enable `Pull on startup` so every Obsidian launch pulls once immediately. The plugin may remain installed for history and manual commands.
 
@@ -253,11 +262,20 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 `
   -VaultPath "C:\path\to\vault" -RunEventProbe
 ```
 
+After installation or repair, run the recovery probe. It terminates the watcher once and verifies that the watchdog starts a replacement:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1 `
+  -VaultPath "C:\path\to\vault" -RunWatcherRecoveryProbe
+```
+
 Require every check before claiming success:
 
-- Repository visibility is private when GitHub CLI can verify it.
+- GitHub CLI must verify repository visibility as `PRIVATE`; `unknown`, query failure, or any non-private result must fail.
 - Watcher and watchdog tasks exist.
 - `watcherProcesses` contains at least one background watcher process; if it is stopped, the watchdog can restart it.
+- Watcher and watchdog tasks have logon triggers, the watchdog has a one-minute timer, and neither task stops on battery power.
+- Both tasks launch through `wscript.exe` and have restart-on-failure policies.
 - Create and delete events commit and push without manual Git commands.
 - Worktree is clean.
 - Local and remote hashes match.

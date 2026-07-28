@@ -7,7 +7,8 @@ param(
     [string]$Branch = "main",
     [int]$TimeoutSeconds = 180,
     [switch]$RunEventProbe,
-    [switch]$RunRemotePullProbe
+    [switch]$RunRemotePullProbe,
+    [switch]$RunWatcherRecoveryProbe
 )
 
 $ErrorActionPreference = "Stop"
@@ -105,14 +106,59 @@ $branchName = (Invoke-Git branch --show-current | Select-Object -First 1).Trim()
 $localHash = (Invoke-Git rev-parse HEAD | Select-Object -First 1).Trim()
 $remoteHash = Get-RemoteHash
 $status = @(Invoke-Git status --porcelain --untracked-files=all)
-$tasks = @(Get-ScheduledTask -TaskName "Obsidian Git Event Sync *" -ErrorAction SilentlyContinue)
-$watchdogTasks = @(Get-ScheduledTask -TaskName "Obsidian Git Sync Watchdog *" -ErrorAction SilentlyContinue)
+$sha = [System.Security.Cryptography.SHA256]::Create()
+$hashBytes = $sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($VaultPath.ToLowerInvariant()))
+$vaultHash = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
+$taskName = "Obsidian Git Event Sync $($vaultHash.Substring(0, 8))"
+$watchdogTaskName = "Obsidian Git Sync Watchdog $($vaultHash.Substring(0, 8))"
+$tasks = @(Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)
+$watchdogTasks = @(Get-ScheduledTask -TaskName $watchdogTaskName -ErrorAction SilentlyContinue)
 $expectedWatcherPath = Join-Path (Join-Path $env:LOCALAPPDATA "ObsidianGitSync") "watch-vault.ps1"
-$watcherProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue | Where-Object {
-    $_.CommandLine -and
-    $_.CommandLine -like "*-File*$expectedWatcherPath*" -and
-    $_.CommandLine -like "*$VaultPath*"
-})
+$watcherFilePattern = '(?i)(?:^|\s)-File\s+"?' + [regex]::Escape($expectedWatcherPath) + '"?(?:\s|$)'
+
+function Get-WatcherProcesses {
+    return @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue | Where-Object {
+        $_.ProcessId -ne $PID -and
+        $_.CommandLine -and
+        $_.CommandLine -match $watcherFilePattern -and
+        $_.CommandLine -like "*$VaultPath*"
+    })
+}
+
+$watcherProcesses = @(Get-WatcherProcesses)
+$watcherTaskHealthy = ($tasks.Count -eq 1 -and -not $tasks[0].Settings.DisallowStartIfOnBatteries -and -not $tasks[0].Settings.StopIfGoingOnBatteries)
+$watchdogTaskHealthy = ($watchdogTasks.Count -eq 1 -and -not $watchdogTasks[0].Settings.DisallowStartIfOnBatteries -and -not $watchdogTasks[0].Settings.StopIfGoingOnBatteries)
+$watcherLogonTrigger = ($tasks.Count -eq 1 -and @($tasks[0].Triggers | Where-Object { $_.CimClass.CimClassName -eq "MSFT_TaskLogonTrigger" }).Count -gt 0)
+$watchdogLogonTrigger = ($watchdogTasks.Count -eq 1 -and @($watchdogTasks[0].Triggers | Where-Object { $_.CimClass.CimClassName -eq "MSFT_TaskLogonTrigger" }).Count -gt 0)
+$watchdogTimerTrigger = ($watchdogTasks.Count -eq 1 -and @($watchdogTasks[0].Triggers | Where-Object { $_.CimClass.CimClassName -eq "MSFT_TaskTimeTrigger" }).Count -gt 0)
+$watcherRestartPolicy = ($tasks.Count -eq 1 -and [int]$tasks[0].Settings.RestartCount -gt 0)
+$watchdogRestartPolicy = ($watchdogTasks.Count -eq 1 -and [int]$watchdogTasks[0].Settings.RestartCount -gt 0)
+$watcherHiddenAction = ($tasks.Count -eq 1 -and @($tasks[0].Actions | Where-Object { $_.Execute -match '(?i)(^|\\)wscript\.exe$' }).Count -gt 0)
+$watchdogHiddenAction = ($watchdogTasks.Count -eq 1 -and @($watchdogTasks[0].Actions | Where-Object { $_.Execute -match '(?i)(^|\\)wscript\.exe$' }).Count -gt 0)
+
+$watcherRecoveryProbe = $null
+if ($RunWatcherRecoveryProbe) {
+    if ($watcherProcesses.Count -eq 0) { throw "No watcher process is available for the recovery probe." }
+    $stoppedProcessIds = @($watcherProcesses.ProcessId)
+    foreach ($process in $watcherProcesses) {
+        Stop-Process -Id $process.ProcessId -Force -ErrorAction Stop
+    }
+    Start-Sleep -Seconds 1
+    Start-ScheduledTask -TaskName $watchdogTaskName
+    $deadline = (Get-Date).AddSeconds([Math]::Min($TimeoutSeconds, 30))
+    do {
+        Start-Sleep -Seconds 1
+        $watcherProcesses = @(Get-WatcherProcesses)
+        $replacementProcesses = @($watcherProcesses | Where-Object { $_.ProcessId -notin $stoppedProcessIds })
+    } while ($replacementProcesses.Count -eq 0 -and (Get-Date) -lt $deadline)
+    if ($replacementProcesses.Count -eq 0) {
+        throw "The watchdog did not restart the watcher within the recovery timeout."
+    }
+    $watcherRecoveryProbe = [pscustomobject]@{
+        stoppedProcessIds = $stoppedProcessIds
+        replacementProcessIds = @($replacementProcesses.ProcessId)
+    }
+}
 
 $visibility = "unknown"
 $gh = Get-Command gh.exe -ErrorAction SilentlyContinue
@@ -123,6 +169,7 @@ if ($gh -and $remoteUrl -match 'github\.com[/:]([^/]+)/([^/]+)$') {
     $visibilityResult = & $gh.Source repo view $repo --json visibility --jq .visibility 2>$null
     if ($LASTEXITCODE -eq 0) { $visibility = $visibilityResult.Trim() }
 }
+$visibilityVerified = ($visibility -eq "PRIVATE")
 
 $probe = $null
 if ($RunEventProbe) {
@@ -200,11 +247,37 @@ $result = [pscustomobject]@{
     watcherTasks = @($tasks | ForEach-Object { [pscustomobject]@{ name = $_.TaskName; state = $_.State.ToString() } })
     watchdogTasks = @($watchdogTasks | ForEach-Object { [pscustomobject]@{ name = $_.TaskName; state = $_.State.ToString() } })
     watcherProcesses = @($watcherProcesses | ForEach-Object { [pscustomobject]@{ processId = $_.ProcessId; name = $_.Name } })
+    watcherTaskHealthy = $watcherTaskHealthy
+    watchdogTaskHealthy = $watchdogTaskHealthy
+    watcherLogonTrigger = $watcherLogonTrigger
+    watchdogLogonTrigger = $watchdogLogonTrigger
+    watchdogTimerTrigger = $watchdogTimerTrigger
+    watcherRestartPolicy = $watcherRestartPolicy
+    watchdogRestartPolicy = $watchdogRestartPolicy
+    watcherHiddenAction = $watcherHiddenAction
+    watchdogHiddenAction = $watchdogHiddenAction
+    visibilityVerified = $visibilityVerified
+    watcherRecoveryProbe = $watcherRecoveryProbe
     eventProbe = $probe
     remotePullProbe = $remotePullProbe
 }
 
 $result | ConvertTo-Json -Depth 5
-if (-not $result.worktreeClean -or -not $result.hashesMatch -or $branchName -ne $Branch -or $visibility -eq "PUBLIC") {
+if (
+    -not $result.worktreeClean -or
+    -not $result.hashesMatch -or
+    $branchName -ne $Branch -or
+    -not $visibilityVerified -or
+    $watcherProcesses.Count -eq 0 -or
+    -not $watcherTaskHealthy -or
+    -not $watchdogTaskHealthy -or
+    -not $watcherLogonTrigger -or
+    -not $watchdogLogonTrigger -or
+    -not $watchdogTimerTrigger -or
+    -not $watcherRestartPolicy -or
+    -not $watchdogRestartPolicy -or
+    -not $watcherHiddenAction -or
+    -not $watchdogHiddenAction
+) {
     exit 1
 }

@@ -33,9 +33,6 @@ New-Item -ItemType Directory -Path $InstallRoot -Force | Out-Null
 $installedWatcher = Join-Path $InstallRoot "watch-vault.ps1"
 $installedWatchdog = Join-Path $InstallRoot "watchdog-task.ps1"
 $installedLauncher = Join-Path $InstallRoot "run-hidden.vbs"
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "watch-vault.ps1") -Destination $installedWatcher -Force
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "watchdog-task.ps1") -Destination $installedWatchdog -Force
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "run-hidden.vbs") -Destination $installedLauncher -Force
 
 $sha = [System.Security.Cryptography.SHA256]::Create()
 $hashBytes = $sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($VaultPath.ToLowerInvariant()))
@@ -44,6 +41,25 @@ $taskName = "Obsidian Git Event Sync $($vaultHash.Substring(0, 8))"
 $watchdogTaskName = "Obsidian Git Sync Watchdog $($vaultHash.Substring(0, 8))"
 $logPath = Join-Path $InstallRoot "sync-$($vaultHash.Substring(0, 8)).log"
 $watchdogLogPath = Join-Path $InstallRoot "watchdog-$($vaultHash.Substring(0, 8)).log"
+
+Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+Stop-ScheduledTask -TaskName $watchdogTaskName -ErrorAction SilentlyContinue
+$watcherFilePattern = '(?i)(?:^|\s)-File\s+"?' + [regex]::Escape($installedWatcher) + '"?(?:\s|$)'
+$oldWatcherProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue | Where-Object {
+    $_.ProcessId -ne $PID -and
+    $_.CommandLine -and
+    $_.CommandLine -match $watcherFilePattern -and
+    $_.CommandLine -like "*$VaultPath*"
+})
+foreach ($process in $oldWatcherProcesses) {
+    Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+}
+Start-Sleep -Milliseconds 500
+
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot "watch-vault.ps1") -Destination $installedWatcher -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot "watchdog-task.ps1") -Destination $installedWatchdog -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot "run-hidden.vbs") -Destination $installedLauncher -Force
+
 $arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$installedWatcher`" -VaultPath `"$VaultPath`" -GitExe `"$GitExe`" -DebounceSeconds $DebounceSeconds -PullIntervalSeconds $PullIntervalSeconds -Remote `"$Remote`" -Branch `"$Branch`" -LogPath `"$logPath`""
 $watchdogArguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$installedWatchdog`" -TaskName `"$taskName`" -WatcherPath `"$installedWatcher`" -VaultPath `"$VaultPath`" -LogPath `"$watchdogLogPath`""
 
@@ -60,7 +76,19 @@ Register-ScheduledTask -TaskName $watchdogTaskName -Action $watchdogAction -Trig
 
 Start-ScheduledTask -TaskName $taskName
 Start-ScheduledTask -TaskName $watchdogTaskName
-Start-Sleep -Seconds 2
+$deadline = (Get-Date).AddSeconds(15)
+do {
+    Start-Sleep -Milliseconds 500
+    $watcherProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue | Where-Object {
+        $_.ProcessId -ne $PID -and
+        $_.CommandLine -and
+        $_.CommandLine -match $watcherFilePattern -and
+        $_.CommandLine -like "*$VaultPath*"
+    })
+} while ($watcherProcesses.Count -eq 0 -and (Get-Date) -lt $deadline)
+if ($watcherProcesses.Count -eq 0) {
+    throw "The watcher task was registered but no watcher process started."
+}
 
 [pscustomobject]@{
     taskName = $taskName
@@ -76,4 +104,5 @@ Start-Sleep -Seconds 2
     watchdogLogPath = $watchdogLogPath
     debounceSeconds = $DebounceSeconds
     pullIntervalSeconds = $PullIntervalSeconds
+    watcherProcessCount = $watcherProcesses.Count
 } | ConvertTo-Json

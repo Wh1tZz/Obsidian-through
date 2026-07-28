@@ -33,12 +33,21 @@ if (-not $task) {
 $watcherRunning = $false
 if ($WatcherPath) {
     $resolvedWatcherPath = try { (Resolve-Path -LiteralPath $WatcherPath).Path } catch { $WatcherPath }
+    $watcherFilePattern = '(?i)(?:^|\s)-File\s+"?' + [regex]::Escape($resolvedWatcherPath) + '"?(?:\s|$)'
     $processes = @(Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" -ErrorAction SilentlyContinue | Where-Object {
+        $_.ProcessId -ne $PID -and
         $_.CommandLine -and
-        $_.CommandLine -like "*-File*$resolvedWatcherPath*" -and
+        $_.CommandLine -match $watcherFilePattern -and
         (-not $VaultPath -or $_.CommandLine -like "*$VaultPath*")
     })
     $watcherRunning = ($processes.Count -gt 0)
+}
+
+if ($WatcherPath -and -not $watcherRunning -and $task.State -eq "Running") {
+    Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 500
+    $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    Write-WatchdogLog "cleared stale running state: $TaskName"
 }
 
 if (($WatcherPath -and -not $watcherRunning) -or (-not $WatcherPath -and $task.State -ne "Running")) {

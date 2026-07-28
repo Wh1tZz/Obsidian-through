@@ -14,7 +14,7 @@ Usage:
   npx obsidian-through help
   npx obsidian-through login [--proxy http://127.0.0.1:7890]
   npx obsidian-through publish --vault <path> --repo <github-url-or-owner/name> [--open]
-  npx obsidian-through verify --vault <path>
+  npx obsidian-through verify --vault <path> [--recovery-probe]
   npx obsidian-through mobile-info --vault <path> [--open-token-page]
 
 Examples:
@@ -22,7 +22,7 @@ Examples:
   npx obsidian-through setup --vault "<vault-path>" --repo owner/private-vault --open
   npx obsidian-through login
   npx obsidian-through publish --vault "<vault-path>" --repo https://github.com/owner/private-vault.git --open
-  npx obsidian-through verify --vault "<vault-path>"
+  npx obsidian-through verify --vault "<vault-path>" --recovery-probe
 `);
 }
 
@@ -120,7 +120,9 @@ if (command === "verify") {
     printUsage();
     process.exit(2);
   }
-  ps("verify-sync.ps1", ["-VaultPath", vault]);
+  const psArgs = ["-VaultPath", vault];
+  if (hasFlag(rest, "--recovery-probe")) psArgs.push("-RunWatcherRecoveryProbe");
+  ps("verify-sync.ps1", psArgs);
 }
 
 if (command === "mobile-info") {

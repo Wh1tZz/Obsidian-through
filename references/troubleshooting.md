@@ -90,7 +90,7 @@ Windows PC = 主同步端，事件监听自动提交，静默定时 Pull
 
 ## Windows 主同步任务停止在 Ready
 
-重新运行 `scripts/install-windows-event-sync.ps1`。安装器会取消电池停止限制，并注册每分钟运行一次的 watchdog。主同步任务应恢复为 `Running`；验证时同时检查 `watcherProcesses` 是否存在后台监听进程。watchdog 日志出现 `started target task` 表示它已经自动恢复过监听进程。
+重新运行 `scripts/install-windows-event-sync.ps1`。安装器会停止旧任务和残留监听进程，取消电池停止限制，并注册登录自启和每分钟运行一次的 watchdog。不要只看任务显示的 `Running` 或 `Ready`；同时检查 `watcherProcesses` 是否存在后台监听进程。新版 watchdog 只匹配 `-File watch-vault.ps1`，不会把自己的 `-WatcherPath` 参数误判成监听器。运行 `verify-sync.ps1 -RunWatcherRecoveryProbe` 可验证监听进程被终止后是否会自动恢复；watchdog 日志出现 `started target task` 表示恢复成功。
 
 ## Windows 周期性弹出 CLI 窗口
 
@@ -210,7 +210,7 @@ Validate devices one at a time: Windows with GitHub, then the main phone, then t
 
 ## Windows main sync task is stuck in Ready
 
-Run `scripts/install-windows-event-sync.ps1` again. The installer removes battery-stop restrictions and registers a watchdog that runs every minute. The main sync task should return to `Running`; during verification, also confirm `watcherProcesses` contains a background watcher process. `started target task` in the watchdog log means it has automatically recovered the watcher.
+Run `scripts/install-windows-event-sync.ps1` again. The installer stops the old task and leftover watcher process, removes battery-stop restrictions, and registers both logon startup and a watchdog that runs every minute. Do not rely only on the task's `Running` or `Ready` label; also confirm that `watcherProcesses` contains a background watcher. The current watchdog matches only `-File watch-vault.ps1`, so its own `-WatcherPath` argument cannot be mistaken for the watcher. Run `verify-sync.ps1 -RunWatcherRecoveryProbe` to confirm automatic recovery after the watcher is terminated. `started target task` in the watchdog log means recovery succeeded.
 
 ## Windows periodically flashes a CLI window
 
