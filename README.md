@@ -1,5 +1,7 @@
 # Obsidian-through
 
+![Obsidian-through：电脑、GitHub 与移动端 Obsidian 双向同步](assets/obsidian-through-sync.png)
+
 随时随地在手机端 Obsidian 中写下一篇笔记，它都可以同步到电脑端 Obsidian 和 GitHub 私有仓库中。
 
 Obsidian-through 会帮助完成整套同步环境的搭建，包括创建或连接 GitHub 私有仓库、上传现有笔记、配置 Windows 或 macOS 自动同步，以及指导移动端 Obsidian Git 连接到 GitHub。
@@ -8,50 +10,62 @@ Obsidian-through 会帮助完成整套同步环境的搭建，包括创建或连
 
 ---
 
-## v0.1.7 更新内容
-
-* 自动识别 Windows 与 macOS，并选择对应的电脑端同步方式
-* Windows 使用隐藏事件监听器，支持编辑后推送、静默拉取、开机自启和异常恢复
-* macOS 使用原生 Git、GitHub CLI 与 Obsidian Git，不再套用移动端流程
-* 手机和平板统一使用一套移动端配置说明
-* 移动端自动同步调整为停止编辑约 30 秒后执行，并在启动 Obsidian 时 Pull
-* 克隆位置动态使用用户的真实仓库名，不固定为 `obsidian-vault`
-* 新增跨平台 `mobile-info`，自动生成账号、仓库、克隆地址和提交邮箱
-* 新增 Windows/macOS 平台路由测试和 macOS 隔离同步测试
-
----
-
 ## 它能做什么？
 
-* 检查并安装 Git、GitHub CLI 等必要工具
-* 打开 GitHub 登录授权页面
-* 创建或连接 GitHub 私有笔记仓库
-* 将电脑端现有 Obsidian 笔记上传到 GitHub
-* 自动识别 Windows 或 macOS
-* 配置 Windows 自动提交、拉取和上传
-* 守护 Windows 后台同步任务，异常停止后自动恢复
-* 配置 macOS 原生 Git、GitHub CLI 和 Obsidian Git 自动同步
-* 指导手机和平板安装和配置 Obsidian Git
-* 解释 Pull、Commit、Push、Commit-and-sync 的区别
-* 检查并修复常见的 Pull、Push、认证、网络和冲突问题
-* 从 Git 历史恢复误删笔记
-* 验证手机、电脑和 GitHub 是否可以正常双向同步
+### 一键完成电脑端配置
+
+运行一次 `npx obsidian-through`，它会自动识别 Windows 或 macOS，检查并安装 Git、GitHub CLI 等必要工具，打开 GitHub 网页登录，定位本地 Obsidian 笔记库，并完成 GitHub 私有仓库连接。
+
+### 处理不同的笔记与仓库状态
+
+* 本地有笔记、GitHub 没有仓库：创建私有仓库并上传现有笔记
+* GitHub 已有仓库、新电脑没有笔记：连接并拉取已有笔记库
+* 本地和 GitHub 都有笔记：创建保护分支后安全合并，不强制覆盖任何一边
+* 仓库已经连接：检查远端、分支、提交状态和私有权限后继续配置
+
+### Windows 自动同步
+
+Windows 使用隐藏事件监听器监控笔记的新增、修改、删除和重命名。停止编辑约 15 秒后自动提交并推送，工作区干净时每 30 秒静默拉取其他设备的更新。监听器支持开机登录自启、断网后补推和异常停止后自动恢复，不会反复弹出命令行窗口。
+
+### macOS 自动同步
+
+macOS 使用原生 Git、GitHub CLI 和 Obsidian Git。工具会完成仓库连接和插件自动同步配置，支持停止编辑后提交、启动 Obsidian 时 Pull，并避免安装 Windows 专用的计划任务与监听器。
+
+### 手机和平板接入
+
+移动端使用统一流程，不需要区分 iPhone、iPad 或 Android 教程。Obsidian-through 会生成当前用户专属的 GitHub 账号、私有仓库、HTTPS 克隆地址、仓库名和提交邮箱，并逐步指导：
+
+* 安装并启用 Obsidian Git
+* 创建仅能访问指定笔记仓库的 Fine-grained Token
+* 填写 Username、Token、Author name 和 Author email
+* 克隆已有私有仓库并完成首次 Pull 与 Commit-and-sync
+* 配置停止编辑约 30 秒后的自动同步和启动 Pull
+
+### 检查、修复与恢复
+
+* 诊断 Pull、Push、认证、Token、VPN 和网络错误
+* 修复远端分支、upstream、路径、重复笔记和合并冲突
+* 检查 Windows 监听器与 Watchdog 是否真实运行
+* 从 Git 提交历史恢复误删或被覆盖的笔记
+* 验证电脑、GitHub 和移动设备之间的双向同步
+
+### 保护笔记与设备设置
+
+笔记默认进入 GitHub 私有仓库。设备专属的 Obsidian 工作区、缓存和 Git 插件认证配置不会被同步到其他设备，避免电脑与手机互相覆盖设置。所有流程禁止强推，也不会要求用户把密码、验证码或 Token 发到聊天中。
 
 ---
 
-## 同步方式
+## 你最终会得到
 
 ```text
-手机端 Obsidian
-       ↕
-GitHub 私有仓库
-       ↕
-电脑端 Obsidian
+Windows / macOS Obsidian
+          ↕
+   GitHub 私有仓库
+          ↕
+  手机 / 平板 Obsidian
 ```
 
-手机上记录的笔记，可以通过 GitHub 同步到电脑。
-
-电脑上修改的内容，也可以上传到 GitHub，并同步回手机。
+电脑端负责稳定的自动提交和拉取，GitHub 保存完整版本历史，移动端可以随时查看、编辑并同步同一套 Markdown 笔记。
 
 ---
 
@@ -186,46 +200,62 @@ You do not need to learn complex Git commands or combine multiple tutorials. Aft
 
 ---
 
-## What’s new in v0.1.7
-
-* Detects Windows and macOS automatically and selects the matching desktop workflow
-* Uses a hidden Windows event watcher for post-edit push, silent pull, login startup, and recovery
-* Uses native Git, GitHub CLI, and Obsidian Git on macOS instead of the mobile workflow
-* Provides one shared setup guide for phones and tablets
-* Runs mobile automatic sync about 30 seconds after editing stops and pulls when Obsidian starts
-* Derives the clone folder from the user’s real repository name instead of hardcoding `obsidian-vault`
-* Adds cross-platform `mobile-info` output for account, repository, clone URL, and commit email
-* Adds Windows/macOS routing tests and an isolated macOS synchronization test
-
----
-
 ## What can it do?
 
-* Check and install Git, GitHub CLI, and required tools
-* Open the GitHub web login flow
-* Create or connect a private GitHub note repository
-* Upload an existing desktop Obsidian vault to GitHub
-* Detect Windows or macOS automatically
-* Configure automatic commit, pull, and push on Windows
-* Watch and recover the Windows background sync task
-* Configure native Git, GitHub CLI, and Obsidian Git automation on macOS
-* Guide Obsidian Git setup on phones and tablets
-* Explain Pull, Commit, Push, and Commit-and-sync
-* Diagnose Pull, Push, authentication, network, and conflict issues
-* Recover accidentally deleted notes from Git history
-* Verify two-way sync across phone, computer, and GitHub
+### One-command desktop setup
+
+Run `npx obsidian-through` once. It detects Windows or macOS, checks and installs Git and GitHub CLI, opens GitHub web login, locates the local Obsidian vault, and connects it to a private GitHub repository.
+
+### Handle every starting state
+
+* Local notes with no GitHub repository: create a private repository and upload the vault
+* Existing GitHub repository on a new computer: connect and pull the existing vault
+* Notes on both sides: create a protection branch and merge safely without overwriting either side
+* Existing connection: verify remote, branch, commit state, and private visibility before continuing
+
+### Automatic Windows synchronization
+
+A hidden Windows event watcher monitors note creation, edits, deletion, and renaming. It commits and pushes about 15 seconds after editing stops and silently pulls other-device updates every 30 seconds when the worktree is clean. It starts at login, retries after network recovery, restarts after failure, and does not flash command-line windows.
+
+### Automatic macOS synchronization
+
+On macOS, Obsidian-through uses native Git, GitHub CLI, and Obsidian Git. It connects the repository and configures post-edit synchronization and startup Pull without installing Windows-only scheduled tasks.
+
+### Phones and tablets
+
+One shared mobile workflow covers phones and tablets. Obsidian-through generates personalized values for the current GitHub account, private repository, HTTPS clone URL, repository name, and commit email, then guides the user through:
+
+* Installing and enabling Obsidian Git
+* Creating a fine-grained token limited to the selected notes repository
+* Entering Username, Token, Author name, and Author email
+* Cloning the private repository and completing the first Pull and Commit-and-sync
+* Enabling synchronization about 30 seconds after edits stop and Pull on startup
+
+### Diagnose, repair, and recover
+
+* Diagnose Pull, Push, authentication, token, VPN, and network failures
+* Repair remotes, upstream branches, paths, duplicate notes, and merge conflicts
+* Verify that the Windows watcher and watchdog are genuinely running
+* Recover deleted or overwritten notes from Git history
+* Verify two-way synchronization across desktop, GitHub, and mobile
+
+### Protect notes and device settings
+
+Notes stay in a private GitHub repository. Device-specific Obsidian workspace, cache, and Git authentication settings remain local so computers and phones do not overwrite one another’s configuration. The workflow never force-pushes and never asks users to send passwords, verification codes, or tokens through chat.
 
 ---
 
-## Sync model
+## What you get
 
 ```text
-Mobile Obsidian
-       ↕
-Private GitHub repository
-       ↕
-Desktop Obsidian
+Windows / macOS Obsidian
+          ↕
+ Private GitHub repository
+          ↕
+  Phone / tablet Obsidian
 ```
+
+The desktop provides reliable automatic commit and pull, GitHub stores version history, and mobile devices can view, edit, and sync the same Markdown vault.
 
 ---
 
