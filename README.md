@@ -2,9 +2,22 @@
 
 随时随地在手机端 Obsidian 中写下一篇笔记，它都可以同步到电脑端 Obsidian 和 GitHub 私有仓库中。
 
-Obsidian-through 会帮助完成整套同步环境的搭建，包括创建或连接 GitHub 私有仓库、上传现有笔记、配置 Windows 自动同步，以及指导手机端 Obsidian Git 连接到 GitHub。
+Obsidian-through 会帮助完成整套同步环境的搭建，包括创建或连接 GitHub 私有仓库、上传现有笔记、配置 Windows 或 macOS 自动同步，以及指导移动端 Obsidian Git 连接到 GitHub。
 
 你不需要学习复杂的 Git 命令，也不需要在不同教程之间反复查找配置方法。安装后，只需要说明你想实现 Obsidian 多端同步，工具就会按照完整流程进行配置、检查和问题修复。
+
+---
+
+## v0.1.7 更新内容
+
+* 自动识别 Windows 与 macOS，并选择对应的电脑端同步方式
+* Windows 使用隐藏事件监听器，支持编辑后推送、静默拉取、开机自启和异常恢复
+* macOS 使用原生 Git、GitHub CLI 与 Obsidian Git，不再套用移动端流程
+* 手机和平板统一使用一套移动端配置说明
+* 移动端自动同步调整为停止编辑约 30 秒后执行，并在启动 Obsidian 时 Pull
+* 克隆位置动态使用用户的真实仓库名，不固定为 `obsidian-vault`
+* 新增跨平台 `mobile-info`，自动生成账号、仓库、克隆地址和提交邮箱
+* 新增 Windows/macOS 平台路由测试和 macOS 隔离同步测试
 
 ---
 
@@ -14,9 +27,11 @@ Obsidian-through 会帮助完成整套同步环境的搭建，包括创建或连
 * 打开 GitHub 登录授权页面
 * 创建或连接 GitHub 私有笔记仓库
 * 将电脑端现有 Obsidian 笔记上传到 GitHub
+* 自动识别 Windows 或 macOS
 * 配置 Windows 自动提交、拉取和上传
 * 守护 Windows 后台同步任务，异常停止后自动恢复
-* 指导 iPhone / Android 安装和配置 Obsidian Git
+* 配置 macOS 原生 Git、GitHub CLI 和 Obsidian Git 自动同步
+* 指导手机和平板安装和配置 Obsidian Git
 * 解释 Pull、Commit、Push、Commit-and-sync 的区别
 * 检查并修复常见的 Pull、Push、认证、网络和冲突问题
 * 从 Git 历史恢复误删笔记
@@ -54,6 +69,12 @@ npx obsidian-through
 
 ```bash
 npx obsidian-through help
+```
+
+查看当前系统会使用的同步方式：
+
+```bash
+npx obsidian-through platform
 ```
 
 常用命令：
@@ -159,9 +180,22 @@ Obsidian-through 不是新的 Obsidian 同步插件。
 
 Write a note in Obsidian on your phone, then sync it to Obsidian on your computer and to a private GitHub repository.
 
-Obsidian-through helps set up the complete synchronization environment: creating or connecting a private GitHub repository, uploading existing notes, configuring Windows automatic sync, and guiding mobile Obsidian Git setup.
+Obsidian-through helps set up the complete synchronization environment: creating or connecting a private GitHub repository, uploading existing notes, configuring Windows or macOS automatic sync, and guiding mobile Obsidian Git setup.
 
 You do not need to learn complex Git commands or combine multiple tutorials. After installation, describe the Obsidian sync you want, and the workflow can guide setup, verification, and repair.
+
+---
+
+## What’s new in v0.1.7
+
+* Detects Windows and macOS automatically and selects the matching desktop workflow
+* Uses a hidden Windows event watcher for post-edit push, silent pull, login startup, and recovery
+* Uses native Git, GitHub CLI, and Obsidian Git on macOS instead of the mobile workflow
+* Provides one shared setup guide for phones and tablets
+* Runs mobile automatic sync about 30 seconds after editing stops and pulls when Obsidian starts
+* Derives the clone folder from the user’s real repository name instead of hardcoding `obsidian-vault`
+* Adds cross-platform `mobile-info` output for account, repository, clone URL, and commit email
+* Adds Windows/macOS routing tests and an isolated macOS synchronization test
 
 ---
 
@@ -171,9 +205,11 @@ You do not need to learn complex Git commands or combine multiple tutorials. Aft
 * Open the GitHub web login flow
 * Create or connect a private GitHub note repository
 * Upload an existing desktop Obsidian vault to GitHub
+* Detect Windows or macOS automatically
 * Configure automatic commit, pull, and push on Windows
 * Watch and recover the Windows background sync task
-* Guide Obsidian Git setup on iPhone / Android
+* Configure native Git, GitHub CLI, and Obsidian Git automation on macOS
+* Guide Obsidian Git setup on phones and tablets
 * Explain Pull, Commit, Push, and Commit-and-sync
 * Diagnose Pull, Push, authentication, network, and conflict issues
 * Recover accidentally deleted notes from Git history
@@ -207,6 +243,12 @@ Show commands:
 
 ```bash
 npx obsidian-through help
+```
+
+Show the workflow selected for the current operating system:
+
+```bash
+npx obsidian-through platform
 ```
 
 Common commands:
