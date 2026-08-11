@@ -40,7 +40,8 @@
 
 - `Git: Pull` 只把 GitHub 上的最新版本拉到本机，不会上传本机修改。
 - `Git: Commit-and-sync` 才会提交本机修改、拉取远端更新并推送到 GitHub。
-- `Auto commit-and-sync interval = 1` 表示停止编辑后约 1 分钟触发提交同步；用户想立即上传时，运行 `Git: Commit-and-sync`。
+- `Auto commit-and-sync interval = 0.5` 表示停止编辑后约 30 秒触发提交同步；用户想立即上传时，运行 `Git: Commit-and-sync`。
+- 若手动 `Git: Commit-and-sync` 成功但自动同步不触发，先完全关闭并重新打开 Obsidian，让 Git 插件重新初始化计时器；再保持应用前台修改测试笔记，停止编辑 30–60 秒并检查 GitHub。
 - 用户 Pull 后继续修改笔记，后续提交的是修改后的最新本地稿，不是 Pull 那一刻的旧稿。
 - 编辑前先 Pull 的意义是拿到最新底稿，减少旧版本编辑导致的冲突或推送拒绝。
 
@@ -118,6 +119,15 @@ Windows PC = 主同步端，事件监听自动提交，静默定时 Pull
 
 移动端 Obsidian Git 使用 JavaScript Git 实现。大型仓库可能缓慢或崩溃，此模式不支持 SSH，且 iOS 可能暂停后台任务。优先使用 HTTPS、小型笔记库、前台同步，并在离开前手动运行 `Commit-and-sync`。
 
+## 移动端克隆未完成、提示 No upstream 或自动退出
+
+1. 先确认是否看到过 `Cloned new repo.` 和 `Please restart Obsidian`。没看到就是克隆失败，不要运行 Pull，也不要选择 `origin`。
+2. 暂时关闭移动网络、Wi-Fi 和 VPN，再打开 Obsidian；进入 Git 的 `Automatic` 关闭 `Pull on startup`。若来不及进入设置，先停用 Git 插件。
+3. 在第三方插件页面把 Git 更新到最新版。
+4. 若当前只是临时空 vault，确认没有任何需要保留的本地笔记后，从仓库管理器删除该临时 vault，重新创建空 vault、安装 Git、填写 Username 和 Token，再把仓库克隆到以真实仓库名命名的新子文件夹；不要选择 `Vault Root`。
+5. 只有看到克隆成功提示后才重启并配置 Automatic。若克隆再次导致退出，停止重试；移动端 JavaScript Git 可能因仓库体积或内存不足崩溃。
+6. 只有此前确实看到克隆成功提示、后来首次 Pull 才提示 No upstream 时，才选择 `origin`，再选择 `main` 或 `origin/main`；Pull 成功后再开启 `Pull on startup`。
+
 ---
 
 # English Version
@@ -162,7 +172,8 @@ Pull before editing, open the existing note from the file list, and edit its bod
 
 - `Git: Pull` only downloads the newest version from GitHub to the local device. It does not upload local edits.
 - `Git: Commit-and-sync` commits local edits, pulls remote changes, and pushes to GitHub.
-- `Auto commit-and-sync interval = 1` means sync runs about one minute after editing stops. To upload immediately, run `Git: Commit-and-sync`.
+- `Auto commit-and-sync interval = 0.5` means sync runs about 30 seconds after editing stops. To upload immediately, run `Git: Commit-and-sync`.
+- If manual `Git: Commit-and-sync` succeeds but automatic sync does not trigger, fully close and reopen Obsidian so the Git plugin reinitializes its timer. Then keep the app active, edit a test note, stop editing for 30–60 seconds, and check GitHub.
 - If the user pulls and then edits a note, the later sync uploads the edited local draft, not the draft as it existed at pull time.
 - Pull before editing gives the user the newest base draft and reduces conflicts or push rejections from stale local copies.
 
@@ -251,3 +262,12 @@ Stop automatic writers. Preserve both versions, resolve conflicted Markdown file
 ## iOS limitations
 
 Mobile Obsidian Git uses a JavaScript Git implementation. Large repositories may be slow or crash, SSH is unsupported in this mode, and iOS may suspend background work. Prefer HTTPS, small vaults, foreground synchronization, and manual `Commit-and-sync` before leaving.
+
+## Mobile clone is incomplete, shows No upstream, or exits
+
+1. First determine whether `Cloned new repo.` and `Please restart Obsidian` ever appeared. If not, clone failed: do not run Pull or select `origin`.
+2. Disable mobile data, Wi-Fi, and VPN before opening Obsidian. Disable `Pull on startup`; if there is not enough time, disable Git first.
+3. Update Git to the latest community-plugin version.
+4. If this is only a temporary empty vault, confirm it contains no local notes that need preservation, remove it from the vault manager, create a new empty vault, install Git, enter Username and Token, and clone into a new subfolder named after the real repository. Do not select `Vault Root`.
+5. Configure Automatic only after the clone-success message appears. If clone exits again, stop retrying; mobile JavaScript Git may be exhausting memory.
+6. Select `origin`, then `main` or `origin/main`, only when clone previously succeeded and the first Pull later reports No upstream. Enable `Pull on startup` only after Pull succeeds.

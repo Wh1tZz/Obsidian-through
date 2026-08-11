@@ -5,6 +5,9 @@
   "bin": {
     "obsidian-through": "bin/obsidian-through.js"
   },
+  "scripts": {
+    "test": "node scripts/test-platform-routing.js"
+  },
   "files": [
     "SKILL.md",
     "README.md",

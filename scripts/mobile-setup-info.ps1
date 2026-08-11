@@ -37,6 +37,9 @@ $repository = $Matches[2] -replace '\.git$', ''
 $repoFullName = "$owner/$repository"
 $visibility = ((& $GhExe repo view $repoFullName --json visibility --jq .visibility) -join "").Trim()
 if ($visibility -ne "PRIVATE") { throw "The repository must be private before mobile setup." }
+$trackedObsidianFiles = @(& $GitExe -C $VaultPath ls-tree -r --name-only HEAD -- .obsidian 2>$null)
+if ($LASTEXITCODE -ne 0) { throw "Unable to inspect the repository .obsidian directory." }
+$repositoryContainsObsidian = ($trackedObsidianFiles.Count -gt 0)
 
 $tokenUrl = "https://github.com/settings/personal-access-tokens/new"
 if ($OpenTokenPage) { Start-Process $tokenUrl }
@@ -46,9 +49,13 @@ if ($OpenTokenPage) { Start-Process $tokenUrl }
     authorName = if ($account.name) { $account.name } else { $account.login }
     authorEmail = "$($account.id)+$($account.login)@users.noreply.github.com"
     repository = $repoFullName
+    repositoryName = $repository
+    cloneDirectoryName = $repository
     repositoryVisibility = $visibility
     repositoryUrl = "https://github.com/$repoFullName"
     cloneUrl = "https://github.com/$repoFullName.git"
+    repositoryContainsObsidian = $repositoryContainsObsidian
+    repositoryObsidianFileCount = $trackedObsidianFiles.Count
     tokenCreationUrl = $tokenUrl
     tokenManagementUrl = "https://github.com/settings/personal-access-tokens"
     githubEmailSettingsUrl = "https://github.com/settings/emails"

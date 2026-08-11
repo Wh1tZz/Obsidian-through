@@ -5,6 +5,16 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 
+function detectedPlatform() {
+  if (
+    process.env.OBSIDIAN_THROUGH_TEST_MODE === "1" &&
+    process.env.OBSIDIAN_THROUGH_TEST_PLATFORM
+  ) {
+    return process.env.OBSIDIAN_THROUGH_TEST_PLATFORM;
+  }
+  return process.platform;
+}
+
 function printUsage() {
   console.log(`Obsidian-through
 
@@ -16,6 +26,7 @@ Usage:
   npx obsidian-through publish --vault <path> --repo <github-url-or-owner/name> [--open]
   npx obsidian-through verify --vault <path> [--recovery-probe]
   npx obsidian-through mobile-info --vault <path> [--open-token-page]
+  npx obsidian-through platform
 
 Examples:
   npx obsidian-through
@@ -37,7 +48,7 @@ function hasFlag(args, name) {
 }
 
 function ps(script, scriptArgs) {
-  const command = process.platform === "win32" ? "powershell.exe" : "pwsh";
+  const command = "powershell.exe";
   const fullScript = path.join(root, "scripts", script);
   const result = spawnSync(command, ["-ExecutionPolicy", "Bypass", "-File", fullScript, ...scriptArgs], {
     stdio: "inherit",
@@ -48,6 +59,36 @@ function ps(script, scriptArgs) {
     process.exit(1);
   }
   process.exit(result.status ?? 0);
+}
+
+function sh(script, scriptArgs) {
+  const fullScript = path.join(root, "scripts", script);
+  const result = spawnSync("bash", [fullScript, ...scriptArgs], {
+    stdio: "inherit"
+  });
+  if (result.error) {
+    console.error(result.error.message);
+    process.exit(1);
+  }
+  process.exit(result.status ?? 0);
+}
+
+function nodeScript(script, scriptArgs) {
+  const fullScript = path.join(root, "scripts", script);
+  const result = spawnSync(process.execPath, [fullScript, ...scriptArgs], {
+    stdio: "inherit"
+  });
+  if (result.error) {
+    console.error(result.error.message);
+    process.exit(1);
+  }
+  process.exit(result.status ?? 0);
+}
+
+function platformWorkflow(platform) {
+  if (platform === "win32") return "windows-event-watcher";
+  if (platform === "darwin") return "macos-obsidian-git";
+  return "unsupported";
 }
 
 function normalizeRepo(repo) {
@@ -71,6 +112,12 @@ if (command === "help" || command === "--help" || command === "-h") {
   process.exit(0);
 }
 
+if (command === "platform") {
+  const platform = detectedPlatform();
+  console.log(JSON.stringify({ platform, workflow: platformWorkflow(platform) }, null, 2));
+  process.exit(platformWorkflow(platform) === "unsupported" ? 1 : 0);
+}
+
 if (command === "setup") {
   if (hasFlag(rest, "--help") || hasFlag(rest, "-h")) {
     printUsage();
@@ -81,19 +128,40 @@ if (command === "setup") {
   const proxy = valueAfter(rest, "--proxy");
   const debounce = valueAfter(rest, "--debounce-seconds");
   const pullInterval = valueAfter(rest, "--pull-interval-seconds");
-  const psArgs = [];
-  if (vault) psArgs.push("-VaultPath", vault);
-  if (repo) psArgs.push("-RepositoryUrl", repo);
-  if (proxy) psArgs.push("-Proxy", proxy);
-  if (debounce) psArgs.push("-DebounceSeconds", debounce);
-  if (pullInterval) psArgs.push("-PullIntervalSeconds", pullInterval);
-  if (hasFlag(rest, "--install-if-missing")) psArgs.push("-InstallIfMissing");
-  if (hasFlag(rest, "--open")) psArgs.push("-OpenRepositoryPage");
-  if (hasFlag(rest, "--yes") || hasFlag(rest, "-y")) psArgs.push("-Yes");
-  ps("setup-windows.ps1", psArgs);
+  const platform = detectedPlatform();
+  const workflow = platformWorkflow(platform);
+  if (hasFlag(rest, "--dry-run")) {
+    console.log(JSON.stringify({ platform, workflow, vault, repositoryUrl: repo }, null, 2));
+    process.exit(workflow === "unsupported" ? 1 : 0);
+  }
+  if (platform === "win32") {
+    const psArgs = [];
+    if (vault) psArgs.push("-VaultPath", vault);
+    if (repo) psArgs.push("-RepositoryUrl", repo);
+    if (proxy) psArgs.push("-Proxy", proxy);
+    if (debounce) psArgs.push("-DebounceSeconds", debounce);
+    if (pullInterval) psArgs.push("-PullIntervalSeconds", pullInterval);
+    if (hasFlag(rest, "--install-if-missing")) psArgs.push("-InstallIfMissing");
+    if (hasFlag(rest, "--open")) psArgs.push("-OpenRepositoryPage");
+    if (hasFlag(rest, "--yes") || hasFlag(rest, "-y")) psArgs.push("-Yes");
+    ps("setup-windows.ps1", psArgs);
+  }
+  if (platform === "darwin") {
+    const shArgs = [];
+    if (vault) shArgs.push("--vault", vault);
+    if (repo) shArgs.push("--repo", repo);
+    if (hasFlag(rest, "--open")) shArgs.push("--open");
+    sh("setup-macos.sh", shArgs);
+  }
+  console.error(`Unsupported operating system: ${platform}. Windows and macOS are supported.`);
+  process.exit(1);
 }
 
 if (command === "login") {
+  if (detectedPlatform() !== "win32") {
+    console.error("On macOS, run the setup command; it performs GitHub web login automatically.");
+    process.exit(2);
+  }
   const proxy = valueAfter(rest, "--proxy");
   const psArgs = [];
   if (proxy) psArgs.push("-Proxy", proxy);
@@ -101,6 +169,10 @@ if (command === "login") {
 }
 
 if (command === "publish") {
+  if (detectedPlatform() !== "win32") {
+    console.error("On macOS, run the setup command to connect or publish the vault safely.");
+    process.exit(2);
+  }
   const vault = valueAfter(rest, "--vault");
   const repo = normalizeRepo(valueAfter(rest, "--repo"));
   if (!vault || !repo) {
@@ -114,6 +186,10 @@ if (command === "publish") {
 }
 
 if (command === "verify") {
+  if (detectedPlatform() !== "win32") {
+    console.error("The standalone verify command currently checks the Windows watcher. macOS verification runs inside setup.");
+    process.exit(2);
+  }
   const vault = valueAfter(rest, "--vault");
   if (!vault) {
     console.error("verify requires --vault.");
@@ -132,9 +208,9 @@ if (command === "mobile-info") {
     printUsage();
     process.exit(2);
   }
-  const psArgs = ["-VaultPath", vault];
-  if (hasFlag(rest, "--open-token-page")) psArgs.push("-OpenTokenPage");
-  ps("mobile-setup-info.ps1", psArgs);
+  const nodeArgs = ["--vault", vault];
+  if (hasFlag(rest, "--open-token-page")) nodeArgs.push("--open-token-page");
+  nodeScript("mobile-setup-info.js", nodeArgs);
 }
 
 console.error(`Unknown command: ${command}`);
